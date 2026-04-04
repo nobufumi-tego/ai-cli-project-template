@@ -430,6 +430,131 @@ uv run python scripts/init-project.py
 - `*.key` / `*.pem` / `credentials.json` は `.gitignore` 済み
 - LaTeX の場合、コンパイル生成ファイルは `.gitignore` に自動追記
 
+## Claude Code でのプログラム開発例
+
+### 起動
+
+プロジェクトフォルダで以下を実行するだけです。
+
+```bash
+cd your-project
+claude
+```
+
+Claude が `AGENTS.md` を自動で読み込み、プロジェクトの規約・構成を理解した状態で始まります。
+
+---
+
+### 基本的な使い方
+
+**新機能の実装を依頼する**
+```
+src/data/loader.py に CSV を読み込む DataLoader クラスを実装してください。
+AGENTS.md の規約に従い、型ヒントと docstring を付けてください。
+```
+
+**バグを修正させる**
+```
+uv run pytest を実行すると tests/test_loader.py でエラーが出ます。
+[エラーメッセージをここに貼り付け]
+原因を調べて修正してください。
+```
+
+**コードの説明を聞く**
+```
+src/models/trainer.py の train() メソッドの処理を説明してください。
+```
+
+**リファクタリングを依頼する**
+```
+src/utils/helper.py の関数が長くなってきました。
+役割ごとにモジュールを分割してください。
+```
+
+---
+
+### カスタムコマンド
+
+このテンプレートには2つのカスタムコマンドが含まれています。
+
+**テストを実行してサマリーを表示する**
+```
+/project:test-run
+```
+
+実行例：
+```
+✓ PASSED  tests/test_loader.py::test_load_csv
+✓ PASSED  tests/test_loader.py::test_load_empty
+✗ FAILED  tests/test_trainer.py::test_fit — AssertionError: expected 0.9, got 0.7
+→ 修正方針：学習率が高すぎる可能性。LEARNING_RATE を 1e-3 → 1e-4 に下げて再試行。
+```
+
+**コードが規約に準拠しているかチェックする**
+```
+/project:check-conventions
+```
+
+実行例：
+```
+✓ 型ヒント: すべての関数に付いています
+✗ docstring: src/models/trainer.py の fit() に docstring がありません
+✗ 定数化: src/data/loader.py 12行目 — 32 をマジックナンバーで使用しています
+→ 修正案を提示します...
+```
+
+---
+
+### 実践的なワークフロー例
+
+**① 朝の作業開始**
+```
+昨日の続きです。src/evaluation/ の実装を進めましょう。
+まず現状を把握したいので、src/ の構成を説明してください。
+```
+
+**② 実装 → テスト → 修正のサイクル**
+```
+# 1. 実装
+EarlyStopping クラスを src/models/callbacks.py に実装してください。
+
+# 2. テスト確認
+/project:test-run
+
+# 3. 規約チェック
+/project:check-conventions
+
+# 4. 問題があれば修正
+test_callbacks.py の失敗しているテストを修正してください。
+```
+
+**③ コミット前のレビュー**
+```
+今日の変更をコミットする前に、差分をレビューしてください。
+問題があれば指摘してください。
+```
+
+**④ AGENTS.md を育てる**
+```
+今日の作業でわかったことを AGENTS.md の Watch out for に追記してください。
+「DataLoader はファイルが存在しない場合 FileNotFoundError を raise する設計にする」
+```
+
+---
+
+### VS Code との併用
+
+VS Code で Claude Code 拡張機能を使う場合、エディタ上でファイルを開きながらチャットできます。
+
+1. VS Code でプロジェクトフォルダを開く
+2. サイドバーの Claude アイコンをクリック
+3. 開いているファイルの内容を参照しながら指示できる
+
+```
+# ファイルを開いた状態で
+このファイルの TODO コメントを実装してください。
+```
+
 ## ライセンス
 
 MIT
