@@ -128,7 +128,12 @@ uv run python scripts/init-project.py
 
 ---
 
-### Step 5：AI CLI をインストール
+### Step 5：AI CLI をインストール（任意）
+
+> **このステップは省略できます。**
+> AI CLI がなくてもプロジェクトは通常通り使えます。
+> `AGENTS.md` はプロジェクト仕様書・規約書として人間が読む文書としても機能します。
+> AI CLI を使う場合にのみ、以下をインストールしてください。
 
 Claude Code・Gemini CLI・Codex CLI はすべて **Node.js** が必要です。
 使いたいツールだけインストールすれば OK です。
