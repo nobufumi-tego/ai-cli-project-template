@@ -1,19 +1,26 @@
-"""プロジェクト初期化スクリプト。
+"""Project initialization script / プロジェクト初期化スクリプト。
+
+Interactively collects project information and generates AGENTS.md, CLAUDE.md,
+GEMINI.md, README.md, and pyproject.toml.
+Supports English and Japanese. Helps install uv if not found.
 
 対話形式でプロジェクト情報を収集し、AGENTS.md・CLAUDE.md・GEMINI.md・
 README.md・pyproject.toml を自動生成する。
-uv が未インストールの場合は OS を自動判定してインストールを支援する。
+英語・日本語に対応。uv が未インストールの場合はインストールを支援する。
 
-対応 OS: Windows 11 / macOS / Linux
-対応プロジェクト種別: Python（ML・分析・API・CLI・ライブラリ）/ LaTeX / Word
+Supported OS / 対応 OS: Windows 11 / macOS / Linux
+Project types / 対応種別: Python (ML, Analysis, API, CLI, Library) / LaTeX / Word / Custom
 
 Usage:
-    python  scripts/init-project.py   # Windows
-    python3 scripts/init-project.py   # macOS / Linux
+    python  scripts/init-project.py          # Windows
+    python3 scripts/init-project.py          # macOS / Linux
+    python3 scripts/init-project.py --lang en  # Force English
+    python3 scripts/init-project.py --lang ja  # Force Japanese
 """
 
 from __future__ import annotations
 
+import locale
 import platform
 import re
 import shutil
@@ -21,19 +28,469 @@ import subprocess
 import sys
 from pathlib import Path
 
-# プロジェクトルートを基準にパスを解決する
 ROOT = Path(__file__).parent.parent
-
-# Python 最低バージョン（警告のみ。スクリプト自体は 3.8 以上で動作する）
 MIN_PYTHON: tuple[int, int] = (3, 10)
 
+OS = platform.system()  # "Windows" | "Darwin" | "Linux"
 
 # ---------------------------------------------------------------------------
-# プリセット定義
-# type: "python" | "latex" | "word" | "custom"
+# Language detection
 # ---------------------------------------------------------------------------
 
-PYTHON_CONVENTIONS = """\
+
+def _detect_lang() -> str:
+    """Detect display language from --lang argument or system locale.
+
+    Returns:
+        "en" or "ja"
+    """
+    for i, arg in enumerate(sys.argv[1:]):
+        if arg == "--lang" and i + 2 < len(sys.argv):
+            val = sys.argv[i + 2]
+            if val in ("en", "ja"):
+                return val
+        if arg.startswith("--lang="):
+            val = arg.split("=", 1)[1]
+            if val in ("en", "ja"):
+                return val
+    loc = locale.getdefaultlocale()[0] or ""
+    return "ja" if loc.startswith("ja") else "en"
+
+
+# ---------------------------------------------------------------------------
+# UI Messages (EN / JA)
+# ---------------------------------------------------------------------------
+
+MESSAGES: dict[str, dict[str, str]] = {
+    "en": {
+        "lang_prompt": "Select language / 言語を選択",
+        "title": "AI CLI Project Initialization",
+        "subtitle": "Answer the questions to generate AGENTS.md, README.md, and more.",
+        "interrupt_hint": "(Press Ctrl+C to cancel at any time)",
+        "python_warn": "  ! Python {ver} detected. Python {min}+ is recommended.",
+        "python_ok": "  ✓ Python {ver}",
+        "uv_section": "── uv check ──",
+        "uv_ok": "  ✓ uv: {ver}",
+        "uv_ng": "  uv not found.",
+        "uv_desc": "  uv is a fast Python package manager used by this template.",
+        "uv_install_header": "  ─── How to install uv ───",
+        "uv_install_footer": "  ────────────────────────",
+        "uv_win_label": "  Run in PowerShell:",
+        "uv_unix_label": "  Run in terminal:",
+        "uv_homebrew": "  Or (Homebrew):",
+        "no_curl": "  ! curl not found. Please install uv manually.",
+        "uv_install_prompt": "  Try auto-install now?",
+        "uv_manual": "  Run the command above manually, then re-run this script.",
+        "uv_installing": "  Installing...",
+        "uv_cmd_not_found": "  ✗ Command not found: {e}",
+        "uv_install_failed": "  ✗ Installation failed. Please install manually.",
+        "uv_install_ok": "  ✓ Installation complete.",
+        "uv_restart": "  ! Please restart your terminal to update PATH.",
+        "uv_restart_win": (
+            '    Or run in PowerShell: '
+            '$env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","User")'
+        ),
+        "uv_restart_unix": (
+            "    Or run: source ~/.bashrc"
+            "  (or ~/.zshrc, ~/.config/fish/config.fish, etc.)"
+        ),
+        "preset_title": "Select project type:",
+        "preset_selected": '→ Selected: "{label}"\n',
+        "preset_invalid": "  Please enter a number from 1 to {n}.",
+        "prompt_number": "Enter number",
+        "prompt_name": "Project name (English recommended)",
+        "default_name": "my-project",
+        "prompt_desc": "Project description (1-2 lines)",
+        "default_desc": "Project description.",
+        "label_commands": "commands",
+        "label_arch": "folder structure",
+        "label_conv": "conventions",
+        "label_watch": "watch out for",
+        "default_check": "Use this default?",
+        "multiline_end": "(Press Enter on an empty line to finish)",
+        "input_label": "Enter {label}",
+        "interrupted": "\n\nCancelled.",
+        "conv_select": "Select convention type:",
+        "conv_options": [
+            "1. Python (type hints, docstrings, etc.)",
+            "2. LaTeX (section split, BibTeX, etc.)",
+            "3. Word (file naming, style, etc.)",
+            "4. Manual input",
+        ],
+        "dodont_label": "Do / Don't",
+        "confirm_header": "The following files will be generated:",
+        "confirm_name": "  Project name  : {v}",
+        "confirm_type": "  Type          : {v}",
+        "confirm_desc": "  Description   : {v}",
+        "confirm_files": "  Files         : AGENTS.md / CLAUDE.md / GEMINI.md / README.md",
+        "confirm_pyproject": "                  pyproject.toml",
+        "proceed": "Proceed?",
+        "aborted": "Aborted.",
+        "done": "Done!",
+        "next_python": (
+            "Next steps:\n"
+            "  1. uv sync                 # Install dependencies\n"
+            "  2. uv run pytest tests/    # Confirm tests pass\n"
+            "  3. Develop AGENTS.md       # Add project-specific details"
+        ),
+        "next_latex": (
+            "Next steps:\n"
+            "  1. Check your TeX environment   # See README.md setup section\n"
+            "  2. Edit sections/*.tex\n"
+            "  3. latexmk -pdf main.tex       # Compile to PDF"
+        ),
+        "next_word": (
+            "Next steps:\n"
+            "  1. Create .docx files in docs/\n"
+            "  2. Set up Zotero or another reference manager\n"
+            "  3. Add writing guidelines to README.md"
+        ),
+        "written": "  ✓ {f}",
+        "latex_gitignore": "  ✓ .gitignore (LaTeX patterns added)",
+        "latex_skeleton": "  ✓ LaTeX skeleton created (sections/ figures/ refs.bib .latexmkrc)",
+        "word_skeleton": "  ✓ Word skeleton created (docs/ figures/ refs/)",
+    },
+    "ja": {
+        "lang_prompt": "Select language / 言語を選択",
+        "title": "AI CLI プロジェクト初期化スクリプト",
+        "subtitle": "質問に答えると AGENTS.md・README.md 等が自動生成されます。",
+        "interrupt_hint": "（Ctrl+C でいつでも中断できます）",
+        "python_warn": "  ! Python {ver} を使用中です。Python {min}+ を推奨します。",
+        "python_ok": "  ✓ Python {ver}",
+        "uv_section": "─── uv チェック ───",
+        "uv_ok": "  ✓ uv: {ver}",
+        "uv_ng": "  ! uv が見つかりません。",
+        "uv_desc": "  uv は高速な Python パッケージマネージャーです（このテンプレートで使用）。",
+        "uv_install_header": "  ─── uv インストール方法 ───",
+        "uv_install_footer": "  ─────────────────────────",
+        "uv_win_label": "  PowerShell（管理者）で実行：",
+        "uv_unix_label": "  ターミナルで実行：",
+        "uv_homebrew": "  または（Homebrew）：",
+        "no_curl": "  ! curl が見つかりません。手動でインストールしてください。",
+        "uv_install_prompt": "  今すぐ自動インストールを試みますか？",
+        "uv_manual": "  上記コマンドを手動で実行してから、スクリプトを再度実行してください。",
+        "uv_installing": "  インストール中...",
+        "uv_cmd_not_found": "  ✗ コマンドが見つかりません: {e}",
+        "uv_install_failed": "  ✗ インストールに失敗しました。手動でインストールしてください。",
+        "uv_install_ok": "  ✓ インストールが完了しました。",
+        "uv_restart": "  ! PATH を更新するためターミナルを再起動してください。",
+        "uv_restart_win": (
+            '    または PowerShell で実行：'
+            ' $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","User")'
+        ),
+        "uv_restart_unix": (
+            "    または: source ~/.bashrc"
+            "  （~/.zshrc / ~/.config/fish/config.fish 等）"
+        ),
+        "preset_title": "プロジェクト種別を選択してください：",
+        "preset_selected": '→ 「{label}」を選択しました。\n',
+        "preset_invalid": "  1〜{n} の番号を入力してください。",
+        "prompt_number": "番号を入力",
+        "prompt_name": "プロジェクト名（英語推奨）",
+        "default_name": "my-project",
+        "prompt_desc": "プロジェクトの説明（1〜2行）",
+        "default_desc": "プロジェクトの説明。",
+        "label_commands": "コマンド",
+        "label_arch": "フォルダ構成",
+        "label_conv": "規約",
+        "label_watch": "注意事項",
+        "default_check": "このまま使いますか？",
+        "multiline_end": "（空行で入力終了）",
+        "input_label": "{label}を入力",
+        "interrupted": "\n\n中断しました。",
+        "conv_select": "規約の種別を選択してください：",
+        "conv_options": [
+            "1. Python（型ヒント・docstring 等）",
+            "2. LaTeX（セクション分割・BibTeX 等）",
+            "3. Word（ファイル命名・スタイル統一 等）",
+            "4. 手動入力",
+        ],
+        "dodont_label": "Do / Don't",
+        "confirm_header": "以下の内容でファイルを生成します：",
+        "confirm_name": "  プロジェクト名  : {v}",
+        "confirm_type": "  種別            : {v}",
+        "confirm_desc": "  説明            : {v}",
+        "confirm_files": "  生成ファイル    : AGENTS.md / CLAUDE.md / GEMINI.md / README.md",
+        "confirm_pyproject": "                    pyproject.toml",
+        "proceed": "続けますか？",
+        "aborted": "中断しました。",
+        "done": "完了しました！",
+        "next_python": (
+            "次のステップ：\n"
+            "  1. uv sync                 # 依存パッケージをインストール\n"
+            "  2. uv run pytest tests/    # テスト実行で動作確認\n"
+            "  3. AGENTS.md を育てる      # プロジェクト固有の情報を追記していく"
+        ),
+        "next_latex": (
+            "次のステップ：\n"
+            "  1. TeX 環境を確認する      # README.md のセットアップ手順を参照\n"
+            "  2. sections/*.tex を編集する\n"
+            "  3. latexmk -pdf main.tex  # PDF をコンパイル"
+        ),
+        "next_word": (
+            "次のステップ：\n"
+            "  1. docs/ フォルダに .docx ファイルを作成する\n"
+            "  2. Zotero 等の参考文献管理ツールを設定する\n"
+            "  3. README.md に執筆ガイドラインを追記する"
+        ),
+        "written": "  ✓ {f}",
+        "latex_gitignore": "  ✓ .gitignore（LaTeX パターンを追記）",
+        "latex_skeleton": "  ✓ LaTeX 骨格ファイルを作成（sections/ figures/ refs.bib .latexmkrc）",
+        "word_skeleton": "  ✓ Word 骨格ディレクトリを作成（docs/ figures/ refs/）",
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Preset content — English
+# ---------------------------------------------------------------------------
+
+_PY_CONV_EN = """\
+- Type hints required (Python 3.10+)
+- Write docstrings for all functions and classes (Google style)
+- Include units in comments or variable names (e.g., `duration_sec`, `size_mb`)
+- Convert all magic numbers to named constants (at module top or in `configs/`)
+- Do not omit error handling
+- Use `pathlib.Path` instead of `os.path`
+- Do not hardcode absolute paths"""
+
+_PY_DODONT_EN = """\
+DO:
+- Run `uv run pytest` before making changes to confirm existing tests pass
+- Add tests whenever you add a new feature
+- data/raw/ files are read-only; put processed results in data/processed/
+
+DON'T:
+- Do not git-track large files (videos, model checkpoints, etc.) — .gitignore is configured
+- Do not hardcode GPU/CPU environment differences
+- Do not directly edit files in data/raw/"""
+
+_LATEX_CONV_EN = """\
+- Split sections into separate .tex files; load with \\input{sections/...} in main.tex
+- Use relative paths for figures (e.g., \\includegraphics{figures/fig1.pdf})
+- Collect all references in refs.bib; cite with \\citep / \\citet
+- Leave comments explaining changes (e.g., % [2024-01-15] Fixed per reviewer)
+- For Japanese papers use uplatex + dvipdfmx or LuaLaTeX
+- Standardize English punctuation: period (.) and comma (,)"""
+
+_LATEX_DODONT_EN = """\
+DO:
+- git commit before making changes to preserve history
+- Compile and visually verify after adding figures or tables
+- Tidy refs.bib as you add each reference
+
+DON'T:
+- Do not git-track compiled files (*.aux, *.log, etc.) — .gitignore is configured
+- Do not write the entire paper in main.tex (split into sections/)
+- Do not make large rewrites without a backup commit"""
+
+_WORD_CONV_EN = """\
+- Include version number or date in filenames (e.g., paper_v2.1_20240115.docx)
+- Apply consistent heading, body, and caption styles (avoid direct formatting)
+- Insert figures as inline images, not inside text boxes
+- Manage references with Zotero or similar tools
+- Use Track Changes when a revision trail is required (no manual strikethrough)"""
+
+_WORD_DODONT_EN = """\
+DO:
+- Use git regularly to record history (binary diff is invisible, but commits are tracked)
+- Accept all tracked changes before submission for a clean final document
+- Save with embedded fonts for both body and headings
+
+DON'T:
+- Do not git-track multiple draft .docx files (binary diffs are not readable)
+- Do not position figures with spaces or blank lines (use figure positioning settings)
+- Do not submit with comments or tracked changes remaining"""
+
+PRESETS_EN: dict[str, dict[str, str]] = {
+    "1": {
+        "label": "Python ML / AI Research",
+        "type": "python",
+        "commands": """\
+uv run python src/main.py              # Run main process
+uv run pytest tests/ -v                # Run tests
+uv run ruff check src/ tests/          # Lint
+uv run mypy src/                       # Type check
+jupyter lab notebooks/                 # Launch Notebook""",
+        "architecture": """\
+- src/data/       - Data loading and preprocessing modules
+- src/models/     - Model definitions and training logic
+- src/evaluation/ - Evaluation and metrics
+- src/utils/      - Shared utilities
+- data/raw/       - Source data (read-only, not git-tracked)
+- data/processed/ - Processed data
+- notebooks/      - Jupyter Notebooks for experiments
+- tests/          - Test code
+- configs/        - Configuration files (YAML)""",
+        "conventions": _PY_CONV_EN,
+        "do_dont": _PY_DODONT_EN,
+        "watch_out_for": """\
+- Even with a fixed random seed, numerical results may vary slightly between GPU and CPU
+- Use pathlib.Path for dataset paths; avoid absolute paths
+- Place model checkpoints (*.pt, *.pkl) under data/""",
+    },
+    "2": {
+        "label": "Data Analysis",
+        "type": "python",
+        "commands": """\
+uv run python src/main.py              # Run main process
+uv run pytest tests/ -v                # Run tests
+uv run ruff check src/ tests/          # Lint
+jupyter lab notebooks/                 # Launch Notebook""",
+        "architecture": """\
+- src/           - Analysis scripts
+- src/utils/     - Shared utilities
+- data/raw/      - Source data (read-only, not git-tracked)
+- data/processed/- Processed data
+- notebooks/     - Jupyter Notebooks for analysis
+- tests/         - Test code
+- outputs/       - Figures and report outputs""",
+        "conventions": _PY_CONV_EN,
+        "do_dont": _PY_DODONT_EN,
+        "watch_out_for": """\
+- Use pathlib.Path for dataset paths; avoid absolute paths
+- Do not write notebook code that depends on execution order (refactor into modules)
+- Visualization library versions may affect output""",
+    },
+    "3": {
+        "label": "Web API (FastAPI)",
+        "type": "python",
+        "commands": """\
+uv run uvicorn src.main:app --reload   # Start dev server
+uv run pytest tests/ -v                # Run tests
+uv run ruff check src/ tests/          # Lint
+uv run mypy src/                       # Type check""",
+        "architecture": """\
+- src/            - Application code
+- src/routers/    - API routers
+- src/models/     - Pydantic models and schemas
+- src/services/   - Business logic
+- src/utils/      - Shared utilities
+- tests/          - Test code""",
+        "conventions": _PY_CONV_EN,
+        "do_dont": """\
+DO:
+- Store env vars and secrets in .env (confirm it is .gitignored)
+- Use dependency injection (Depends) for testable code
+- Run `uv run pytest` before making changes to confirm tests pass
+
+DON'T:
+- Never hardcode API keys or passwords in source code
+- Do not mix async/await with synchronous code
+- Do not run tests connected to a production database""",
+        "watch_out_for": """\
+- Never commit the .env file to git
+- Be careful about mixing async/await and synchronous code
+- Watch for circular dependencies in dependency injection""",
+    },
+    "4": {
+        "label": "CLI Tool",
+        "type": "python",
+        "commands": """\
+uv run python src/main.py --help       # Show help
+uv run pytest tests/ -v                # Run tests
+uv run ruff check src/ tests/          # Lint
+uv run mypy src/                       # Type check""",
+        "architecture": """\
+- src/           - CLI code (click / typer etc.)
+- src/commands/  - Subcommand definitions
+- src/utils/     - Shared utilities
+- tests/         - Test code""",
+        "conventions": _PY_CONV_EN,
+        "do_dont": _PY_DODONT_EN,
+        "watch_out_for": """\
+- Set appropriate exit codes (success: 0, error: non-zero)
+- Clearly separate stdin / stdout / stderr usage
+- Use pathlib.Path to abstract OS path differences""",
+    },
+    "5": {
+        "label": "Python Library",
+        "type": "python",
+        "commands": """\
+uv run pytest tests/ -v                # Run tests
+uv run ruff check src/ tests/          # Lint
+uv run mypy src/                       # Type check
+uv build                               # Build package""",
+        "architecture": """\
+- src/<package>/ - Library source
+- tests/         - Test code
+- docs/          - Documentation (Sphinx etc.)""",
+        "conventions": _PY_CONV_EN,
+        "do_dont": _PY_DODONT_EN,
+        "watch_out_for": """\
+- Explicitly specify the supported Python version range in pyproject.toml
+- Keep external dependencies to a minimum
+- Explicitly define the public API (__all__)""",
+    },
+    "6": {
+        "label": "LaTeX Paper",
+        "type": "latex",
+        "commands": """\
+latexmk -pdf main.tex              # Compile to PDF
+latexmk -c                         # Clean intermediate files
+latexmk -pvc main.tex              # Auto-compile (watch mode)
+# For Japanese papers:
+latexmk -pdfdvi main.tex           # Compile with uplatex + dvipdfmx""",
+        "architecture": """\
+- main.tex        - Main paper file (loads sections with \\input)
+- sections/       - Per-section .tex files
+  - introduction.tex
+  - method.tex
+  - results.tex
+  - discussion.tex
+  - conclusion.tex
+- figures/        - Figures and graphs (PDF / PNG recommended)
+- tables/         - Tables (.tex format)
+- refs.bib        - References (BibTeX format)
+- styles/         - Style and class files
+- .latexmkrc      - latexmk configuration""",
+        "conventions": _LATEX_CONV_EN,
+        "do_dont": _LATEX_DODONT_EN,
+        "watch_out_for": """\
+- Japanese fonts are environment-dependent; install required fonts via tlmgr for TeX Live
+- Avoid spaces and non-ASCII characters in figure filenames
+- Use FirstauthorYYYYkeyword format for BibTeX cite keys for consistency
+- Include .latexmkrc in the repository to standardize the build environment""",
+    },
+    "7": {
+        "label": "Word Paper (.docx)",
+        "type": "word",
+        "commands": """\
+# Edit files directly in Word / LibreOffice
+# Using pandoc (optional):
+pandoc main.docx -o main.pdf       # Convert to PDF
+pandoc main.md -o main.docx        # Convert Markdown to Word
+# Reference management with Zotero:
+# → Use Zotero desktop app + Word plugin""",
+        "architecture": """\
+- docs/              - Word documents (.docx)
+  - paper_v1.0.docx  - Draft versions
+  - paper_final.docx - Final version
+- figures/           - Figures and graphs (source files)
+- tables/            - Tables (Excel / CSV format)
+- refs/              - References (.bib or Zotero export)""",
+        "conventions": _WORD_CONV_EN,
+        "do_dont": _WORD_DODONT_EN,
+        "watch_out_for": """\
+- Never commit API keys or credentials to git
+- Binary .docx files cannot show meaningful diffs in git
+- Use consistent filename conventions throughout the project""",
+    },
+    "8": {
+        "label": "Custom",
+        "type": "custom",
+        "commands": "",
+        "architecture": "",
+        "conventions": "",
+        "do_dont": "",
+        "watch_out_for": "",
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Preset content — Japanese
+# ---------------------------------------------------------------------------
+
+_PY_CONV_JA = """\
 - 型ヒント必須（Python 3.10+）
 - すべての関数・クラスにdocstringを書く（Google スタイル）
 - 数値の単位はコメントまたは変数名で明記（例: `duration_sec`, `size_mb`）
@@ -42,7 +499,7 @@ PYTHON_CONVENTIONS = """\
 - `os.path` ではなく `pathlib.Path` を使う
 - 絶対パスをハードコードしない"""
 
-PYTHON_DO_DONT = """\
+_PY_DODONT_JA = """\
 DO:
 - 変更前に `uv run pytest` を実行して既存テストが通ることを確認する
 - 新しい機能を追加したらテストも同時に追加する
@@ -53,7 +510,7 @@ DON'T:
 - GPU/CPU環境依存のハードコードをしない
 - data/raw/ のファイルを直接編集しない"""
 
-LATEX_CONVENTIONS = """\
+_LATEX_CONV_JA = """\
 - セクション別に .tex ファイルを分割し、main.tex で \\input{sections/...} する
 - 図のパスは相対パスで記述する（例: \\includegraphics{figures/fig1.pdf}）
 - 参考文献は refs.bib にまとめ、\\citep / \\citet コマンドで引用する
@@ -61,7 +518,7 @@ LATEX_CONVENTIONS = """\
 - 日本語論文は uplatex + dvipdfmx または LuaLaTeX を使う
 - 英語論文の句読点は period（.）と comma（,）で統一する"""
 
-LATEX_DO_DONT = """\
+_LATEX_DODONT_JA = """\
 DO:
 - 変更前に git commit して履歴を残す
 - 図・表を追加したら必ずコンパイルして見た目を確認する
@@ -72,34 +529,14 @@ DON'T:
 - main.tex に全文を書かない（sections/ に分割する）
 - バックアップなしに大幅な書き換えをしない"""
 
-LATEX_GITIGNORE_EXTRA = """\
-
-# LaTeX コンパイル生成ファイル
-*.aux
-*.log
-*.out
-*.toc
-*.lof
-*.lot
-*.bbl
-*.blg
-*.synctex.gz
-*.fls
-*.fdb_latexmk
-*.nav
-*.snm
-*.vrb
-*.xdv
-"""
-
-WORD_CONVENTIONS = """\
+_WORD_CONV_JA = """\
 - ファイル名にバージョン番号または日付を含める（例: paper_v2.1_20240115.docx）
 - 見出し・本文・図タイトル等はスタイルを統一して使う（直接書式を多用しない）
 - 図はインライン図として挿入し、テキストボックスに入れない
 - 参考文献は Zotero 等の文献管理ツールで管理する
 - 変更履歴が必要な場合は「変更履歴の記録」機能を使う（手動の取り消し線は禁止）"""
 
-WORD_DO_DONT = """\
+_WORD_DODONT_JA = """\
 DO:
 - 定期的に git で管理して変更履歴を残す（バイナリ差分は見えないが存在を記録できる）
 - 提出前にトラックチェンジをすべて承認してクリーンな状態にする
@@ -110,7 +547,7 @@ DON'T:
 - 図の位置をスペースや改行で調整しない（図の配置設定を使う）
 - コメント・変更履歴を残したまま提出しない"""
 
-PRESETS: dict[str, dict[str, str]] = {
+PRESETS_JA: dict[str, dict[str, str]] = {
     "1": {
         "label": "Python ML / AI 研究",
         "type": "python",
@@ -130,8 +567,8 @@ jupyter lab notebooks/                 # Notebook起動""",
 - notebooks/      - 実験・分析用Jupyter Notebook
 - tests/          - テストコード
 - configs/        - 設定ファイル（YAML）""",
-        "conventions": PYTHON_CONVENTIONS,
-        "do_dont": PYTHON_DO_DONT,
+        "conventions": _PY_CONV_JA,
+        "do_dont": _PY_DODONT_JA,
         "watch_out_for": """\
 - GPU/CPU環境で乱数シードを固定しても数値結果が微妙に異なる場合がある
 - データセットのファイルパスは絶対パスではなく pathlib.Path で相対記述する
@@ -153,8 +590,8 @@ jupyter lab notebooks/                 # Notebook起動""",
 - notebooks/     - 分析用Jupyter Notebook
 - tests/         - テストコード
 - outputs/       - 図表・レポート出力先""",
-        "conventions": PYTHON_CONVENTIONS,
-        "do_dont": PYTHON_DO_DONT,
+        "conventions": _PY_CONV_JA,
+        "do_dont": _PY_DODONT_JA,
         "watch_out_for": """\
 - データセットのファイルパスは絶対パスではなく pathlib.Path で相対記述する
 - Notebook の実行順序に依存したコードを書かない（モジュールに切り出す）
@@ -175,7 +612,7 @@ uv run mypy src/                       # 型チェック""",
 - src/services/   - ビジネスロジック
 - src/utils/      - 共通ユーティリティ
 - tests/          - テストコード""",
-        "conventions": PYTHON_CONVENTIONS,
+        "conventions": _PY_CONV_JA,
         "do_dont": """\
 DO:
 - 環境変数・秘密情報は .env に書き .gitignore 済みであることを確認する
@@ -204,8 +641,8 @@ uv run mypy src/                       # 型チェック""",
 - src/commands/  - サブコマンド定義
 - src/utils/     - 共通ユーティリティ
 - tests/         - テストコード""",
-        "conventions": PYTHON_CONVENTIONS,
-        "do_dont": PYTHON_DO_DONT,
+        "conventions": _PY_CONV_JA,
+        "do_dont": _PY_DODONT_JA,
         "watch_out_for": """\
 - 終了コードを適切に設定する（正常: 0、エラー: 非0）
 - stdin / stdout / stderr の使い分けを明確にする
@@ -223,8 +660,8 @@ uv build                               # パッケージビルド""",
 - src/<package>/ - ライブラリ本体
 - tests/         - テストコード
 - docs/          - ドキュメント（Sphinx等）""",
-        "conventions": PYTHON_CONVENTIONS,
-        "do_dont": PYTHON_DO_DONT,
+        "conventions": _PY_CONV_JA,
+        "do_dont": _PY_DODONT_JA,
         "watch_out_for": """\
 - Python バージョン互換性の範囲を pyproject.toml で明示する
 - 外部依存は必要最小限にする
@@ -252,8 +689,8 @@ latexmk -pdfdvi main.tex           # uplatex + dvipdfmx でコンパイル""",
 - refs.bib        - 参考文献（BibTeX 形式）
 - styles/         - スタイルファイル・クラスファイル
 - .latexmkrc      - latexmk 設定ファイル""",
-        "conventions": LATEX_CONVENTIONS,
-        "do_dont": LATEX_DO_DONT,
+        "conventions": _LATEX_CONV_JA,
+        "do_dont": _LATEX_DODONT_JA,
         "watch_out_for": """\
 - 日本語フォントは環境依存。TeX Live の場合 tlmgr で必要フォントをインストールする
 - 図のファイル名にスペースや日本語を使わない
@@ -276,17 +713,16 @@ pandoc main.md -o main.docx        # Markdown から Word に変換
   - paper_final.docx - 最終稿
 - figures/           - 図・グラフ（元ファイル保管）
 - tables/            - 表（Excel / CSV 形式）
-- refs/              - 参考文献（.bib または Zotero エクスポート）
-- data/              - 参照データ・統計結果""",
-        "conventions": WORD_CONVENTIONS,
-        "do_dont": WORD_DO_DONT,
+- refs/              - 参考文献（.bib または Zotero エクスポート）""",
+        "conventions": _WORD_CONV_JA,
+        "do_dont": _WORD_DODONT_JA,
         "watch_out_for": """\
-- .docx はバイナリファイルのため git diff で内容が見えない（コミット粒度を粗くする）
-- 異なるバージョンの Word で開くとレイアウトが崩れる場合がある
-- 図の解像度は印刷時 300 dpi 以上、画面表示用は 96 dpi で保存する""",
+- APIキー・認証情報を絶対に git にコミットしない
+- バイナリの .docx ファイルは git で差分が見えない
+- プロジェクト全体でファイル命名規則を統一する""",
     },
     "8": {
-        "label": "カスタム（全項目を手動入力）",
+        "label": "カスタム",
         "type": "custom",
         "commands": "",
         "architecture": "",
@@ -296,170 +732,201 @@ pandoc main.md -o main.docx        # Markdown から Word に変換
     },
 }
 
+ALL_PRESETS: dict[str, dict[str, dict[str, str]]] = {
+    "en": PRESETS_EN,
+    "ja": PRESETS_JA,
+}
+
+# LaTeX .gitignore additions (language-independent)
+LATEX_GITIGNORE_EXTRA = """\
+
+# LaTeX compiled output
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.nav
+*.snm
+*.vrb
+*.xdv
+"""
 
 # ---------------------------------------------------------------------------
-# Python バージョンチェック
+# Python version check
 # ---------------------------------------------------------------------------
 
 
-def check_python_version() -> None:
-    """Python バージョンを確認し、推奨未満の場合は警告する。"""
-    current = sys.version_info[:2]
-    if current < MIN_PYTHON:
-        print(
-            f"  ! Python {current[0]}.{current[1]} を使用中です。"
-            f" Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ を推奨します。"
-        )
+def check_python_version(m: dict[str, str]) -> None:
+    """Warn if the current Python version is below the recommended minimum.
+
+    Args:
+        m: Message dict for the selected language.
+    """
+    cur = sys.version_info[:2]
+    ver = f"{cur[0]}.{cur[1]}.{sys.version_info[2]}"
+    if cur < MIN_PYTHON:
+        min_str = f"{MIN_PYTHON[0]}.{MIN_PYTHON[1]}"
+        print(m["python_warn"].format(ver=ver, min=min_str))
     else:
-        print(f"  ✓ Python {current[0]}.{current[1]}")
+        print(m["python_ok"].format(ver=ver))
 
 
 # ---------------------------------------------------------------------------
-# uv チェック・インストール
+# uv check and install
 # ---------------------------------------------------------------------------
 
 
-def _get_uv_install_command() -> list[str]:
-    """OS に応じた uv インストールコマンドを返す。
+def _get_uv_install_cmd() -> list[str]:
+    """Return the OS-appropriate uv install command.
 
     Returns:
-        subprocess.run に渡すコマンドリスト
+        Command list for subprocess.run.
     """
-    os_name = platform.system()
-    if os_name == "Windows":
+    if OS == "Windows":
         return [
             "powershell",
-            "-ExecutionPolicy",
-            "ByPass",
-            "-c",
-            "irm https://astral.sh/uv/install.ps1 | iex",
+            "-ExecutionPolicy", "ByPass",
+            "-c", "irm https://astral.sh/uv/install.ps1 | iex",
         ]
-    # macOS / Linux
     return ["sh", "-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"]
 
 
-def _show_uv_install_instructions() -> None:
-    """OS に応じた uv の手動インストール手順を表示する。"""
-    os_name = platform.system()
-    print("  ─── uv インストール方法 ───")
-    if os_name == "Windows":
-        print("  PowerShell（管理者）で実行：")
+def _show_uv_instructions(m: dict[str, str]) -> None:
+    """Print OS-specific uv install instructions.
+
+    Args:
+        m: Message dict for the selected language.
+    """
+    print(m["uv_install_header"])
+    if OS == "Windows":
+        print(m["uv_win_label"])
         print(
             '    powershell -ExecutionPolicy ByPass -c'
             ' "irm https://astral.sh/uv/install.ps1 | iex"'
         )
-    elif os_name == "Darwin":
-        print("  ターミナルで実行：")
+    elif OS == "Darwin":
+        print(m["uv_unix_label"])
         print("    curl -LsSf https://astral.sh/uv/install.sh | sh")
-        print("  または（Homebrew）：")
+        print(m["uv_homebrew"])
         print("    brew install uv")
     else:
-        print("  ターミナルで実行：")
+        print(m["uv_unix_label"])
         print("    curl -LsSf https://astral.sh/uv/install.sh | sh")
-    print("  ─────────────────────────")
+    print(m["uv_install_footer"])
 
 
-def _install_uv() -> bool:
-    """OS に応じて uv を自動インストールする。
+def _install_uv(m: dict[str, str]) -> bool:
+    """Attempt to auto-install uv.
+
+    Args:
+        m: Message dict for the selected language.
 
     Returns:
-        インストールに成功した場合 True、失敗した場合 False
+        True if installation succeeded.
     """
-    os_name = platform.system()
-
-    if os_name != "Windows" and not shutil.which("curl"):
-        print("  ! curl が見つかりません。手動でインストールしてください。")
-        _show_uv_install_instructions()
+    if OS != "Windows" and not shutil.which("curl"):
+        print(m["no_curl"])
+        _show_uv_instructions(m)
         return False
 
-    print("  インストール中...")
-    cmd = _get_uv_install_command()
+    print(m["uv_installing"])
+    cmd = _get_uv_install_cmd()
     try:
         result = subprocess.run(cmd, check=False)
     except FileNotFoundError as exc:
-        print(f"  ✗ コマンドが見つかりません: {exc}")
+        print(m["uv_cmd_not_found"].format(e=exc))
         return False
 
     if result.returncode != 0:
-        print("  ✗ インストールに失敗しました。手動でインストールしてください。")
-        _show_uv_install_instructions()
+        print(m["uv_install_failed"])
+        _show_uv_instructions(m)
         return False
 
-    print("  ✓ インストールが完了しました。")
+    print(m["uv_install_ok"])
     print()
-    print("  ! PATH を更新するためターミナルを再起動してください。")
-    if os_name == "Windows":
-        print(
-            '    または PowerShell で実行：'
-            ' $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","User")'
-        )
+    print(m["uv_restart"])
+    if OS == "Windows":
+        print(m["uv_restart_win"])
     else:
-        print("    または: source ~/.bashrc  （~/.zshrc / ~/.config/fish/config.fish 等）")
+        print(m["uv_restart_unix"])
     return True
 
 
-def check_and_setup_uv() -> bool:
-    """uv のインストール状況を確認し、必要に応じてインストールを支援する。
+def check_and_setup_uv(m: dict[str, str]) -> bool:
+    """Check whether uv is available; offer to install if not.
+
+    Args:
+        m: Message dict for the selected language.
 
     Returns:
-        uv が利用可能な場合 True、そうでない場合 False
+        True if uv is available after the check.
     """
     if shutil.which("uv"):
         result = subprocess.run(
             ["uv", "--version"], capture_output=True, text=True, check=False
         )
-        print(f"  ✓ uv: {result.stdout.strip()}")
+        print(m["uv_ok"].format(ver=result.stdout.strip()))
         return True
 
     print()
-    print("  ! uv が見つかりません。")
-    print("  uv は高速な Python パッケージマネージャーです（このテンプレートで使用）。")
+    print(m["uv_ng"])
+    print(m["uv_desc"])
     print()
-    _show_uv_install_instructions()
+    _show_uv_instructions(m)
     print()
 
-    choice = _prompt("  今すぐ自動インストールを試みますか？", default="y").lower()
+    choice = _prompt(m["uv_install_prompt"], default="y", m=m).lower()
     if choice not in ("y", "yes", ""):
-        print("  上記コマンドを手動で実行してから、スクリプトを再度実行してください。")
+        print(m["uv_manual"])
         return False
 
-    return _install_uv()
+    return _install_uv(m)
 
 
 # ---------------------------------------------------------------------------
-# 入力ヘルパー
+# Input helpers
 # ---------------------------------------------------------------------------
 
 
-def _prompt(message: str, default: str = "") -> str:
-    """ユーザーに入力を促す。
+def _prompt(message: str, default: str = "", m: dict[str, str] | None = None) -> str:
+    """Prompt for user input with an optional default.
 
     Args:
-        message: 表示するメッセージ
-        default: 空白入力時のデフォルト値
+        message: Prompt text to display.
+        default: Value to use if the user presses Enter without input.
+        m: Message dict (used for interrupt message only).
 
     Returns:
-        ユーザーの入力値（空白の場合はデフォルト値）
+        User input, or the default value if empty.
     """
     hint = f" [{default}]" if default else ""
     try:
         value = input(f"{message}{hint}: ").strip()
     except (KeyboardInterrupt, EOFError):
-        print("\n\n中断しました。")
+        interrupted_msg = (m or {}).get("interrupted", "\n\nCancelled.")
+        print(interrupted_msg)
         sys.exit(0)
     return value if value else default
 
 
-def _prompt_multiline(message: str) -> str:
-    """複数行の入力を受け付ける。空行で終了。
+def _prompt_multiline(label: str, m: dict[str, str]) -> str:
+    """Prompt for multi-line input, terminated by an empty line.
 
     Args:
-        message: 表示するメッセージ
+        label: Description of the input field.
+        m: Message dict for the selected language.
 
     Returns:
-        入力された複数行テキスト
+        Multi-line string entered by the user.
     """
-    print(f"{message}（空行で入力終了）:")
+    print(f"{m['input_label'].format(label=label)} {m['multiline_end']}:")
     lines: list[str] = []
     try:
         while True:
@@ -468,53 +935,60 @@ def _prompt_multiline(message: str) -> str:
                 break
             lines.append(line)
     except (KeyboardInterrupt, EOFError):
-        print("\n\n中断しました。")
+        print(m["interrupted"])
         sys.exit(0)
     return "\n".join(lines)
 
 
-def _ask_use_default(label: str, default_text: str) -> str:
-    """デフォルト値を表示して使うかどうか確認する。
+def _ask_use_default(label: str, default_text: str, m: dict[str, str]) -> str:
+    """Show a default value and ask whether to use it or enter a custom one.
 
     Args:
-        label: 項目ラベル（例: "コマンド"）
-        default_text: デフォルトのテキスト
+        label: Field label for display.
+        default_text: Default content to show.
+        m: Message dict for the selected language.
 
     Returns:
-        最終的に使用するテキスト
+        The selected or manually entered text.
     """
-    print(f"\nデフォルトの{label}:")
+    print(f"\n{label}:")
     print(default_text)
-    use_default = _prompt("このまま使いますか？", default="y").lower()
+    use_default = _prompt(m["default_check"], default="y", m=m).lower()
     if use_default == "n":
-        return _prompt_multiline(f"{label}を入力")
+        return _prompt_multiline(label, m)
     return default_text
 
 
-def select_preset() -> dict[str, str]:
-    """プロジェクト種別を選択させる。
+def select_preset(
+    presets: dict[str, dict[str, str]], m: dict[str, str]
+) -> dict[str, str]:
+    """Present the project type menu and return the chosen preset.
+
+    Args:
+        presets: Preset dict for the selected language.
+        m: Message dict for the selected language.
 
     Returns:
-        選択されたプリセット辞書
+        The selected preset dict.
     """
     print("\n" + "=" * 54)
-    print("  プロジェクト種別を選択してください：")
+    print(f"  {m['preset_title']}")
     print("=" * 54)
-    for key, preset in PRESETS.items():
+    for key, preset in presets.items():
         print(f"  {key}. {preset['label']}")
     print("=" * 54)
 
     while True:
-        choice = _prompt("番号を入力", default="1")
-        if choice in PRESETS:
-            selected = PRESETS[choice]
-            print(f"\n→ 「{selected['label']}」を選択しました。\n")
+        choice = _prompt(m["prompt_number"], default="1", m=m)
+        if choice in presets:
+            selected = presets[choice]
+            print(f"\n{m['preset_selected'].format(label=selected['label'])}")
             return selected
-        print(f"  1〜{len(PRESETS)} の番号を入力してください。")
+        print(m["preset_invalid"].format(n=len(presets)))
 
 
 # ---------------------------------------------------------------------------
-# ファイル生成
+# File generation
 # ---------------------------------------------------------------------------
 
 
@@ -527,19 +1001,19 @@ def generate_agents_md(
     do_dont: str,
     watch_out_for: str,
 ) -> str:
-    """AGENTS.md の内容を生成する。
+    """Generate the content of AGENTS.md.
 
     Args:
-        name: プロジェクト名
-        description: プロジェクト説明
-        commands: コマンド一覧（複数行）
-        architecture: フォルダ構成（複数行）
-        conventions: 規約一覧（複数行）
-        do_dont: Do / Don't（複数行）
-        watch_out_for: 注意事項（複数行）
+        name: Project name.
+        description: Project description.
+        commands: Commands section content.
+        architecture: Architecture section content.
+        conventions: Conventions section content.
+        do_dont: Do/Don't section content.
+        watch_out_for: Watch out for section content.
 
     Returns:
-        AGENTS.md のテキスト
+        AGENTS.md content as a string.
     """
     return f"""\
 # {name}
@@ -563,16 +1037,39 @@ def generate_agents_md(
 """
 
 
-def generate_readme_python(name: str, description: str) -> str:
-    """Python プロジェクト用 README.md を生成する。
+def _readme_python_en(name: str, description: str) -> str:
+    return f"""\
+# {name}
 
-    Args:
-        name: プロジェクト名
-        description: プロジェクト説明
+{description}
 
-    Returns:
-        README.md のテキスト
-    """
+## Setup
+
+```bash
+# Install dependencies
+uv sync
+
+# Run tests
+uv run pytest tests/ -v
+```
+
+## Key Commands
+
+| Command | Description |
+|---|---|
+| `uv run pytest tests/ -v` | Run tests |
+| `uv run ruff check src/ tests/` | Lint |
+| `uv run mypy src/` | Type check |
+| `/project:test-run` | Run tests & summarize (Claude Code) |
+| `/project:check-conventions` | Check conventions (Claude Code) |
+
+## Directory Structure
+
+See `AGENTS.md` for details.
+"""
+
+
+def _readme_python_ja(name: str, description: str) -> str:
     return f"""\
 # {name}
 
@@ -604,16 +1101,49 @@ uv run pytest tests/ -v
 """
 
 
-def generate_readme_latex(name: str, description: str) -> str:
-    """LaTeX プロジェクト用 README.md を生成する。
+def _readme_latex_en(name: str, description: str) -> str:
+    return f"""\
+# {name}
 
-    Args:
-        name: プロジェクト名
-        description: プロジェクト説明
+{description}
 
-    Returns:
-        README.md のテキスト
-    """
+## Requirements
+
+- TeX Live 2022+ or MiKTeX (Windows)
+- latexmk (included with TeX Live)
+- (Optional) Zotero + BetterBibTeX plugin for reference management
+
+## Setup
+
+### Windows (MiKTeX)
+```powershell
+# Download MiKTeX installer from https://miktex.org/download
+```
+
+### macOS
+```bash
+brew install --cask mactex-no-gui
+```
+
+### Linux (Ubuntu / Debian)
+```bash
+sudo apt install texlive-full latexmk
+```
+
+## Compile
+
+```bash
+latexmk -pdf main.tex   # Compile to PDF
+latexmk -c              # Clean intermediate files
+```
+
+## Directory Structure
+
+See `AGENTS.md` for details.
+"""
+
+
+def _readme_latex_ja(name: str, description: str) -> str:
     return f"""\
 # {name}
 
@@ -635,7 +1165,6 @@ def generate_readme_latex(name: str, description: str) -> str:
 
 ### macOS
 ```bash
-# Homebrew でインストール
 brew install --cask mactex-no-gui
 ```
 
@@ -647,11 +1176,8 @@ sudo apt install texlive-full latexmk
 ## コンパイル
 
 ```bash
-# PDF コンパイル
-latexmk -pdf main.tex
-
-# 中間ファイルをクリーン
-latexmk -c
+latexmk -pdf main.tex   # PDF コンパイル
+latexmk -c              # 中間ファイルをクリーン
 ```
 
 ## ディレクトリ構成
@@ -660,16 +1186,49 @@ latexmk -c
 """
 
 
-def generate_readme_word(name: str, description: str) -> str:
-    """Word プロジェクト用 README.md を生成する。
+def _readme_word_en(name: str, description: str) -> str:
+    return f"""\
+# {name}
 
-    Args:
-        name: プロジェクト名
-        description: プロジェクト説明
+{description}
 
-    Returns:
-        README.md のテキスト
-    """
+## Requirements
+
+- Microsoft Word or LibreOffice Writer
+- (Recommended) Zotero + Word plugin for reference management
+- (Optional) pandoc for format conversion
+
+## Install pandoc (optional)
+
+### Windows
+```powershell
+winget install JohnMacFarlane.Pandoc
+```
+
+### macOS
+```bash
+brew install pandoc
+```
+
+### Linux
+```bash
+sudo apt install pandoc
+```
+
+## File Conversion (with pandoc)
+
+```bash
+pandoc docs/paper_final.docx -o docs/paper_final.pdf
+pandoc draft.md -o docs/paper_draft.docx --reference-doc=styles/template.docx
+```
+
+## Directory Structure
+
+See `AGENTS.md` for details.
+"""
+
+
+def _readme_word_ja(name: str, description: str) -> str:
     return f"""\
 # {name}
 
@@ -701,10 +1260,7 @@ sudo apt install pandoc
 ## ファイル変換（pandoc を使う場合）
 
 ```bash
-# Word → PDF
 pandoc docs/paper_final.docx -o docs/paper_final.pdf
-
-# Markdown → Word
 pandoc draft.md -o docs/paper_draft.docx --reference-doc=styles/template.docx
 ```
 
@@ -714,20 +1270,42 @@ pandoc draft.md -o docs/paper_draft.docx --reference-doc=styles/template.docx
 """
 
 
-def update_pyproject(name: str, description: str) -> None:
-    """pyproject.toml のプロジェクト名と説明を更新する。
+def generate_readme(
+    preset_type: str, name: str, description: str, lang: str
+) -> str:
+    """Generate README.md content for the given project type and language.
 
     Args:
-        name: プロジェクト名（スラッグに正規化）
-        description: プロジェクト説明
+        preset_type: "python" | "latex" | "word" | "custom"
+        name: Project name.
+        description: Project description.
+        lang: "en" or "ja"
+
+    Returns:
+        README.md content as a string.
+    """
+    if preset_type == "latex":
+        return _readme_latex_en(name, description) if lang == "en" else _readme_latex_ja(name, description)
+    if preset_type == "word":
+        return _readme_word_en(name, description) if lang == "en" else _readme_word_ja(name, description)
+    return _readme_python_en(name, description) if lang == "en" else _readme_python_ja(name, description)
+
+
+def update_pyproject(name: str, description: str) -> None:
+    """Update the project name and description in pyproject.toml.
+
+    Args:
+        name: Project name (will be slugified).
+        description: Project description.
     """
     path = ROOT / "pyproject.toml"
     if not path.exists():
         return
-
     slug = name.lower().replace(" ", "-").replace("_", "-")
     content = path.read_text(encoding="utf-8")
-    content = re.sub(r'^name\s*=\s*".+"', f'name = "{slug}"', content, flags=re.MULTILINE)
+    content = re.sub(
+        r'^name\s*=\s*".+"', f'name = "{slug}"', content, flags=re.MULTILINE
+    )
     content = re.sub(
         r'^description\s*=\s*".+"',
         f'description = "{description}"',
@@ -738,10 +1316,10 @@ def update_pyproject(name: str, description: str) -> None:
 
 
 def append_gitignore(extra: str) -> None:
-    """既存の .gitignore にパターンを追記する。
+    """Append patterns to the existing .gitignore.
 
     Args:
-        extra: 追記するパターン文字列
+        extra: Patterns to append.
     """
     path = ROOT / ".gitignore"
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
@@ -750,23 +1328,16 @@ def append_gitignore(extra: str) -> None:
 
 
 def create_latex_skeleton() -> None:
-    """LaTeX プロジェクトの基本ディレクトリと骨格ファイルを作成する。"""
-    dirs = [
-        ROOT / "sections",
-        ROOT / "figures",
-        ROOT / "tables",
-        ROOT / "styles",
-    ]
-    for d in dirs:
+    """Create the LaTeX project directory structure and skeleton files."""
+    for d in [ROOT / "sections", ROOT / "figures", ROOT / "tables", ROOT / "styles"]:
         d.mkdir(exist_ok=True)
         (d / ".gitkeep").touch()
 
-    # main.tex 骨格
     main_tex = ROOT / "main.tex"
     if not main_tex.exists():
         main_tex.write_text(
             r"""\documentclass[12pt]{article}
-% \documentclass[12pt]{jlreq}  % 日本語論文の場合
+% \documentclass[12pt]{jlreq}  % For Japanese papers
 
 \usepackage{amsmath, amssymb}
 \usepackage{graphicx}
@@ -775,8 +1346,8 @@ def create_latex_skeleton() -> None:
 
 \addbibresource{refs.bib}
 
-\title{論文タイトル}
-\author{著者名}
+\title{Paper Title}
+\author{Author Name}
 \date{\today}
 
 \begin{document}
@@ -796,21 +1367,19 @@ def create_latex_skeleton() -> None:
             encoding="utf-8",
         )
 
-    # セクション骨格
     for sec in ["introduction", "method", "results", "discussion", "conclusion"]:
         tex_file = ROOT / "sections" / f"{sec}.tex"
         if not tex_file.exists():
             tex_file.write_text(
-                f"\\section{{{sec.capitalize()}}}\n\n% TODO: ここに本文を書く\n",
+                f"\\section{{{sec.capitalize()}}}\n\n% TODO: Write content here\n",
                 encoding="utf-8",
             )
 
-    # refs.bib
     refs_bib = ROOT / "refs.bib"
     if not refs_bib.exists():
         refs_bib.write_text(
-            "% 参考文献を BibTeX 形式で記述する\n"
-            "% 例:\n"
+            "% Add references in BibTeX format\n"
+            "% Example:\n"
             "% @article{Smith2024example,\n"
             "%   author  = {Smith, John},\n"
             "%   title   = {Example Title},\n"
@@ -820,15 +1389,14 @@ def create_latex_skeleton() -> None:
             encoding="utf-8",
         )
 
-    # .latexmkrc
     latexmkrc = ROOT / ".latexmkrc"
     if not latexmkrc.exists():
         latexmkrc.write_text(
-            "# latexmk 設定ファイル\n"
-            "# PDF 直接生成（pdflatex）\n"
+            "# latexmk configuration\n"
+            "# Direct PDF generation (pdflatex)\n"
             "$pdf_mode = 1;\n"
             "\n"
-            "# 日本語論文（uplatex + dvipdfmx）の場合は上をコメントアウトして下を使う:\n"
+            "# For Japanese papers (uplatex + dvipdfmx), comment out above and use:\n"
             "# $latex = 'uplatex %O %S';\n"
             "# $bibtex = 'upbibtex %O %B';\n"
             "# $dvipdf = 'dvipdfmx %O -o %D %S';\n"
@@ -838,189 +1406,187 @@ def create_latex_skeleton() -> None:
 
 
 def create_word_skeleton() -> None:
-    """Word プロジェクトの基本ディレクトリを作成する。"""
-    dirs = [
+    """Create the Word project directory structure."""
+    for d in [
         ROOT / "docs",
         ROOT / "figures",
         ROOT / "tables",
         ROOT / "refs",
         ROOT / "data",
-    ]
-    for d in dirs:
+    ]:
         d.mkdir(exist_ok=True)
         (d / ".gitkeep").touch()
 
 
 # ---------------------------------------------------------------------------
-# 次のステップ表示
+# Language selection
 # ---------------------------------------------------------------------------
 
-_NEXT_STEPS_PYTHON = """\
-次のステップ：
-  1. uv sync                 # 依存パッケージをインストール
-  2. uv run pytest tests/    # テスト実行で動作確認
-  3. AGENTS.md を育てる      # プロジェクト固有の情報を追記していく"""
 
-_NEXT_STEPS_LATEX = """\
-次のステップ：
-  1. TeX 環境を確認する      # README.md のセットアップ手順を参照
-  2. sections/*.tex を編集する
-  3. latexmk -pdf main.tex  # PDF をコンパイル"""
+def select_language() -> str:
+    """Prompt the user to select a language, or auto-detect from locale.
 
-_NEXT_STEPS_WORD = """\
-次のステップ：
-  1. docs/ フォルダに .docx ファイルを作成する
-  2. Zotero 等の参考文献管理ツールを設定する
-  3. README.md に執筆ガイドラインを追記する"""
+    Returns:
+        "en" or "ja"
+    """
+    detected = _detect_lang()
+    prompt = "Select language / 言語を選択 [en/ja]"
+    try:
+        raw = input(f"{prompt} [{detected}]: ").strip().lower()
+    except (KeyboardInterrupt, EOFError):
+        print("\nCancelled. / 中断しました。")
+        sys.exit(0)
+    if raw in ("en", "ja"):
+        return raw
+    return detected
 
 
 # ---------------------------------------------------------------------------
-# メイン
+# Main
 # ---------------------------------------------------------------------------
 
 
 def main() -> None:
-    """対話形式でプロジェクト情報を収集し、各ファイルを生成する。"""
+    """Interactively collect project information and generate configuration files."""
+    # --- Language selection (first, before anything else) ---
+    lang = _detect_lang()
+    # Only show the prompt if --lang was NOT explicitly given
+    if not any(
+        a.startswith("--lang") for a in sys.argv[1:]
+    ):
+        lang = select_language()
+
+    m = MESSAGES[lang]
+    presets = ALL_PRESETS[lang]
+
     print("\n" + "=" * 54)
-    print("  AI CLI プロジェクト初期化スクリプト")
+    print(f"  {m['title']}")
     print("=" * 54)
-    print("質問に答えると AGENTS.md・README.md 等が自動生成されます。")
-    print("（Ctrl+C でいつでも中断できます）")
+    print(m["subtitle"])
+    print(m["interrupt_hint"])
     print()
 
-    # --- Python バージョン確認 ---
-    check_python_version()
+    # --- Python version check ---
+    check_python_version(m)
 
-    # --- プロジェクト種別を選択 ---
-    preset = select_preset()
-    preset_type = preset["type"]  # "python" | "latex" | "word" | "custom"
+    # --- Project type selection ---
+    preset = select_preset(presets, m)
+    preset_type = preset["type"]
 
-    # --- Python プロジェクトのみ uv チェック ---
+    # --- uv check (Python projects only) ---
     if preset_type in ("python", "custom"):
         print()
-        print("─── uv チェック ───")
-        check_and_setup_uv()
+        print(m["uv_section"])
+        check_and_setup_uv(m)
 
-    # --- 基本情報 ---
+    # --- Basic info ---
     print()
-    name = _prompt("プロジェクト名（英語推奨）", default="my-project")
-    description = _prompt("プロジェクトの説明（1〜2行）", default="プロジェクトの説明。")
+    name = _prompt(m["prompt_name"], default=m["default_name"], m=m)
+    description = _prompt(m["prompt_desc"], default=m["default_desc"], m=m)
 
-    # --- コマンド ---
+    # --- Commands ---
     commands = (
-        _ask_use_default("コマンド", preset["commands"])
+        _ask_use_default(m["label_commands"], preset["commands"], m)
         if preset["commands"]
-        else _prompt_multiline(
-            "コマンドを入力（例: uv run python src/main.py  # メイン実行）"
-        )
+        else _prompt_multiline(m["label_commands"], m)
     )
 
-    # --- フォルダ構成 ---
+    # --- Architecture ---
     architecture = (
-        _ask_use_default("フォルダ構成", preset["architecture"])
+        _ask_use_default(m["label_arch"], preset["architecture"], m)
         if preset["architecture"]
-        else _prompt_multiline("フォルダ構成を入力（例: - src/ - ソースコード）")
+        else _prompt_multiline(m["label_arch"], m)
     )
 
-    # --- 規約 ---
+    # --- Conventions (custom preset: choose type) ---
     if preset_type == "custom":
-        print("\n規約の種別を選択してください：")
-        print("  1. Python（型ヒント・docstring 等）")
-        print("  2. LaTeX（セクション分割・BibTeX 等）")
-        print("  3. Word（ファイル命名・スタイル統一 等）")
-        print("  4. 手動入力")
-        conv_choice = _prompt("番号を入力", default="1")
-        conv_map = {
-            "1": PYTHON_CONVENTIONS,
-            "2": LATEX_CONVENTIONS,
-            "3": WORD_CONVENTIONS,
+        print(f"\n{m['conv_select']}")
+        for opt in m["conv_options"]:
+            print(f"  {opt}")
+        conv_choice = _prompt(m["prompt_number"], default="1", m=m)
+        conv_map: dict[str, str] = {
+            "1": _PY_CONV_EN if lang == "en" else _PY_CONV_JA,
+            "2": _LATEX_CONV_EN if lang == "en" else _LATEX_CONV_JA,
+            "3": _WORD_CONV_EN if lang == "en" else _WORD_CONV_JA,
         }
-        conventions = (
-            conv_map.get(conv_choice)
-            or _prompt_multiline("規約を入力")
-        )
-        do_dont = _prompt_multiline("Do / Don't を入力")
+        conventions = conv_map.get(conv_choice) or _prompt_multiline(m["label_conv"], m)
+        do_dont = _prompt_multiline(m["dodont_label"], m)
     else:
         conventions = preset["conventions"]
         do_dont = preset["do_dont"]
 
-    # --- 注意事項 ---
+    # --- Watch out for ---
     watch_out_for = (
-        _ask_use_default("注意事項", preset["watch_out_for"])
+        _ask_use_default(m["label_watch"], preset["watch_out_for"], m)
         if preset["watch_out_for"]
-        else _prompt_multiline("注意事項を入力（ハマりポイント・落とし穴など）")
+        else _prompt_multiline(m["label_watch"], m)
     )
 
-    # --- 確認 ---
+    # --- Confirmation ---
     print("\n" + "=" * 54)
-    print("以下の内容でファイルを生成します：")
+    print(m["confirm_header"])
     print("=" * 54)
-    print(f"  プロジェクト名  : {name}")
-    print(f"  種別            : {preset['label']}")
-    print(f"  説明            : {description}")
-    print(f"  生成ファイル    : AGENTS.md / CLAUDE.md / GEMINI.md / README.md")
+    print(m["confirm_name"].format(v=name))
+    print(m["confirm_type"].format(v=preset["label"]))
+    print(m["confirm_desc"].format(v=description))
+    print(m["confirm_files"])
     if preset_type in ("python", "custom"):
-        print(f"                    pyproject.toml")
+        print(m["confirm_pyproject"])
     print("=" * 54)
 
-    confirm = _prompt("\n続けますか？", default="y").lower()
+    confirm = _prompt(f"\n{m['proceed']}", default="y", m=m).lower()
     if confirm not in ("y", "yes", ""):
-        print("中断しました。")
+        print(m["aborted"])
         sys.exit(0)
 
     print()
 
-    # --- AGENTS.md ---
+    # --- Write AGENTS.md ---
     agents_content = generate_agents_md(
         name, description, commands, architecture, conventions, do_dont, watch_out_for
     )
     (ROOT / "AGENTS.md").write_text(agents_content, encoding="utf-8")
-    print("  ✓ AGENTS.md")
+    print(m["written"].format(f="AGENTS.md"))
 
-    # --- CLAUDE.md / GEMINI.md ---
+    # --- Write CLAUDE.md / GEMINI.md ---
     (ROOT / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
-    print("  ✓ CLAUDE.md")
+    print(m["written"].format(f="CLAUDE.md"))
     (ROOT / "GEMINI.md").write_text("@AGENTS.md\n", encoding="utf-8")
-    print("  ✓ GEMINI.md")
+    print(m["written"].format(f="GEMINI.md"))
 
-    # --- README.md ---
-    if preset_type == "latex":
-        readme_content = generate_readme_latex(name, description)
-    elif preset_type == "word":
-        readme_content = generate_readme_word(name, description)
-    else:
-        readme_content = generate_readme_python(name, description)
+    # --- Write README.md ---
+    readme_content = generate_readme(preset_type, name, description, lang)
     (ROOT / "README.md").write_text(readme_content, encoding="utf-8")
-    print("  ✓ README.md")
+    print(m["written"].format(f="README.md"))
 
-    # --- pyproject.toml（Python のみ） ---
+    # --- Update pyproject.toml (Python only) ---
     if preset_type in ("python", "custom"):
         update_pyproject(name, description)
-        print("  ✓ pyproject.toml")
+        print(m["written"].format(f="pyproject.toml"))
 
-    # --- LaTeX 固有処理 ---
+    # --- LaTeX-specific ---
     if preset_type == "latex":
         append_gitignore(LATEX_GITIGNORE_EXTRA)
-        print("  ✓ .gitignore（LaTeX パターンを追記）")
+        print(m["latex_gitignore"])
         create_latex_skeleton()
-        print("  ✓ LaTeX 骨格ファイルを作成（sections/ figures/ refs.bib .latexmkrc）")
+        print(m["latex_skeleton"])
 
-    # --- Word 固有処理 ---
+    # --- Word-specific ---
     if preset_type == "word":
         create_word_skeleton()
-        print("  ✓ Word 骨格ディレクトリを作成（docs/ figures/ refs/）")
+        print(m["word_skeleton"])
 
-    # --- 完了メッセージ ---
+    # --- Done ---
     print()
     print("=" * 54)
-    print("  完了しました！")
+    print(f"  {m['done']}")
     print("=" * 54)
     if preset_type == "latex":
-        print(_NEXT_STEPS_LATEX)
+        print(m["next_latex"])
     elif preset_type == "word":
-        print(_NEXT_STEPS_WORD)
+        print(m["next_word"])
     else:
-        print(_NEXT_STEPS_PYTHON)
+        print(m["next_python"])
     print("=" * 54)
     print()
 
