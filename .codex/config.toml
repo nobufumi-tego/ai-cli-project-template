@@ -1,0 +1,35 @@
+# Codex CLI 設定ファイル
+# 参考: https://github.com/openai/codex
+#
+# このファイルをプロジェクト固有の設定に編集してください。
+# AGENTS.md が共通指示書として自動読み込みされます。
+
+# ── モデル設定 ─────────────────────────────────────────
+model = "o4-mini"
+# model = "gpt-4o"        # より高精度が必要な場合
+
+# ── サンドボックス設定 ──────────────────────────────────
+[sandbox]
+# "workspace-write" : プロジェクト内のファイル編集を許可（推奨）
+# "read-only"       : 読み取り専用（安全重視）
+# "none"            : 制限なし（注意して使用）
+mode = "workspace-write"
+
+# ── 承認ポリシー ────────────────────────────────────────
+[approval]
+# "auto"   : すべて自動実行（CI/CD向け）
+# "manual" : すべて手動承認
+# "suggest": 提案のみ（デフォルト）
+policy = "suggest"
+
+# ── MCP サーバー設定（オプション） ──────────────────────
+# 外部ツールを Codex CLI から利用する場合にコメントを外して設定してください。
+
+# [mcp_servers.github]
+# command = "npx"
+# args = ["@modelcontextprotocol/server-github"]
+# env = { GITHUB_TOKEN = "${GITHUB_TOKEN}" }
+
+# [mcp_servers.filesystem]
+# command = "npx"
+# args = ["@modelcontextprotocol/server-filesystem", "."]

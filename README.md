@@ -100,6 +100,8 @@ uv run python scripts/init-project.py
 | 7 | Word 論文執筆 | Word / LibreOffice |
 | 8 | カスタム | 任意 |
 
+生成後の `AGENTS.md` の完成形は [docs/example-agents.md](docs/example-agents.md) で確認できます。
+
 ---
 
 ## 生成されるファイル
@@ -136,9 +138,12 @@ uv run python scripts/init-project.py
 │   ├── rules/python-conventions.md
 │   └── skills/ml-research/SKILL.md
 ├── .gemini/commands/
+├── .codex/
+│   └── config.toml               # Codex CLI 設定（モデル・サンドボックス・MCP）
 ├── src/ tests/ notebooks/ data/ configs/
 ├── docs/
-│   └── beginner-guide.md         # 初心者向けセットアップガイド
+│   ├── beginner-guide.md         # 初心者向けセットアップガイド
+│   └── example-agents.md         # AGENTS.md 生成サンプル
 └── pyproject.toml
 ```
 
