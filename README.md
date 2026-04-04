@@ -29,18 +29,51 @@ git --version
 
 ## クイックスタート
 
-```bash
-# 1. このテンプレートからリポジトリを作成（GitHub の "Use this template" ボタン）
+### Step 1：リポジトリをクローン
 
-# 2. クローン
+git だけあれば OK です。
+
+```bash
 git clone https://github.com/<your-name>/<your-repo>.git
 cd <your-repo>
+```
 
-# 3. 初期化スクリプトを実行（Python がなくても uv が自動で用意します）
+---
+
+### Step 2：uv をインストール
+
+clone 直後は `uv` コマンドが使えないため、**先にインストールが必要**です。
+`uv_setup/` に OS 別の検証済みスクリプトがあります（curl / PowerShell のみ必要）。
+
+**Linux**
+```bash
+chmod +x uv_setup/install.sh
+./uv_setup/install.sh
+```
+
+**Windows 11**（ダブルクリックまたは PowerShell から）
+```bat
+uv_setup\install.bat
+```
+
+> 詳細は **[uv_setup/README.md](uv_setup/README.md)** を参照してください。
+> ※ `uv_setup/install.*` は uv + Python + ML 基本パッケージを一括セットアップします。
+> uv だけ入れたい場合は `uv --version` で確認後、不要なパッケージは後から追加してください。
+
+インストール後、**ターミナルを再起動**して確認：
+```bash
+uv --version   # バージョンが表示されれば OK
+```
+
+---
+
+### Step 3：プロジェクトを初期化
+
+```bash
 uv run python scripts/init-project.py
 ```
 
-スクリプトが対話形式で以下を設定します：
+対話形式で以下を設定します：
 - プロジェクト種別の選択（8種類）
 - プロジェクト名・説明の入力
 - AGENTS.md・README.md 等を自動生成
