@@ -126,6 +126,108 @@ uv run python scripts/init-project.py
 - プロジェクト名・説明の入力
 - AGENTS.md・README.md 等を自動生成
 
+---
+
+### Step 5：AI CLI をインストール
+
+Claude Code・Gemini CLI・Codex CLI はすべて **Node.js** が必要です。
+使いたいツールだけインストールすれば OK です。
+
+#### Node.js のインストール
+
+まず確認：
+```bash
+node --version   # v18 以上であれば OK → CLI インストールへ
+```
+
+インストールされていない場合：
+
+**Windows 11**
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+インストール後は **PowerShell を再起動**してください。
+
+**macOS**
+```bash
+brew install node
+```
+Homebrew 未導入の場合は https://brew.sh を参照してください。
+
+**Linux (Ubuntu / Debian)**
+```bash
+# NodeSource 経由（apt の標準版は古いため非推奨）
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+**Linux (Fedora / RHEL)**
+```bash
+sudo dnf install nodejs
+```
+
+インストール確認：
+```bash
+node --version
+npm --version
+```
+
+---
+
+#### Claude Code
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+初回認証（Anthropic アカウントが必要）：
+```bash
+claude   # ブラウザが開き、ログイン画面が表示される
+```
+
+---
+
+#### Gemini CLI
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+初回認証（Google アカウントが必要）：
+```bash
+gemini   # ブラウザが開き、ログイン画面が表示される
+```
+
+---
+
+#### Codex CLI
+
+```bash
+npm install -g @openai/codex
+```
+
+OpenAI API キーを環境変数に設定：
+
+**Windows 11**（PowerShell）
+```powershell
+[System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-...", "User")
+```
+
+**macOS / Linux**（`~/.bashrc` または `~/.zshrc` に追記）
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+---
+
+#### インストール確認
+
+```bash
+claude --version
+gemini --version
+codex --version
+```
+
 ## uv について
 
 uv は Python のインストールからパッケージ管理まで一括で担うツールです。
