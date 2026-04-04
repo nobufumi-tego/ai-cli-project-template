@@ -53,9 +53,9 @@ AGENTS.md を更新するだけで 3ツールすべてに反映される
 ## クイックスタート
 
 ```bash
-# 1. Git・uv をインストール（uv_setup/ 参照）
-./uv_setup/install.sh        # macOS / Linux
-.\uv_setup\install.bat       # Windows 11
+# 1. uv をインストール（Git は別途インストール、uv_setup/ には ML 環境も含む）
+./uv_setup/install.sh        # macOS / Linux（uv + PyTorch 等 約 2GB）
+.\uv_setup\install.bat       # Windows 11（uv + PyTorch 等 約 2GB）
 
 # 2. クローン
 git clone https://github.com/<your-name>/<your-repo>.git
@@ -155,7 +155,8 @@ uv run python scripts/init-project.py
 │   ├── install.sh / install.bat  #   OS 別インストーラー
 │   └── README.md
 ├── scripts/
-│   └── init-project.py           # プロジェクト初期化スクリプト
+│   ├── init-project.py           # プロジェクト初期化スクリプト
+│   └── check-setup.py            # 環境診断スクリプト（stdlib のみ）
 ├── .claude/
 │   ├── settings.json             # Hooks・権限設定
 │   ├── commands/
@@ -168,8 +169,11 @@ uv run python scripts/init-project.py
 │   └── config.toml               # Codex CLI 設定（モデル・サンドボックス・MCP）
 ├── src/ tests/ notebooks/ data/ configs/
 ├── docs/
-│   ├── beginner-guide.md         # 初心者向けセットアップガイド
-│   └── example-agents.md         # AGENTS.md 生成サンプル
+│   ├── beginner-guide.md         # 初心者向けセットアップガイド（日本語）
+│   ├── beginner-guide.en.md      # 初心者向けセットアップガイド（英語）
+│   ├── example-agents.md         # AGENTS.md 生成サンプル
+│   ├── recovery.md               # アンインストール手順
+│   └── instructor-guide.md       # 講師担当ガイド
 └── pyproject.toml
 ```
 
@@ -220,7 +224,8 @@ src/data/loader.py に DataLoader クラスを実装してください。
 ## スクリプトの安全性
 
 このリポジトリのスクリプトは**システムファイルを変更しません**。
-書き込み先はすべてユーザー領域（ホームディレクトリ配下）であり、`sudo` も不要です。
+書き込み先はすべてユーザー領域（ホームディレクトリ配下）です。
+`sudo` が必要なのは Linux で `install.sh` を実行した場合のみ（libgomp のインストール時）です。
 
 | スクリプト | 書き込み先 | sudo 要否 | 最悪のケース |
 |---|---|---|---|

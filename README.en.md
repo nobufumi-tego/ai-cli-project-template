@@ -52,9 +52,9 @@ Update AGENTS.md once → changes apply to all 3 tools instantly
 ## Quick Start
 
 ```bash
-# 1. Install Git & uv (see uv_setup/ for verified installers)
-./uv_setup/install.sh        # macOS / Linux
-.\uv_setup\install.bat       # Windows 11
+# 1. Install uv (Git is separate; uv_setup/ also installs a full ML stack)
+./uv_setup/install.sh        # macOS / Linux (uv + PyTorch etc., ~2 GB)
+.\uv_setup\install.bat       # Windows 11 (uv + PyTorch etc., ~2 GB)
 
 # 2. Clone
 git clone https://github.com/<your-name>/<your-repo>.git
@@ -173,7 +173,9 @@ See [docs/example-agents.md](docs/example-agents.md) for a sample of the generat
 ├── docs/
 │   ├── beginner-guide.md         # Beginner setup guide (Japanese)
 │   ├── beginner-guide.en.md      # Beginner setup guide (English)
-│   └── example-agents.md         # Sample generated AGENTS.md
+│   ├── example-agents.md         # Sample generated AGENTS.md
+│   ├── recovery.md               # Uninstall / recovery guide
+│   └── instructor-guide.md       # Instructor guide for classroom use
 └── pyproject.toml
 ```
 
@@ -231,7 +233,8 @@ uv run pytest returns the following error: [paste error]. Find and fix the cause
 ## Script Safety
 
 The scripts in this repository **do not modify system files**.
-All writes go to user-space directories only (under your home directory). No `sudo` required.
+All writes go to user-space directories only (under your home directory).
+`sudo` is required only on Linux when running `install.sh` (for the libgomp system library).
 
 | Script | Write location | sudo required | Worst case |
 |---|---|---|---|

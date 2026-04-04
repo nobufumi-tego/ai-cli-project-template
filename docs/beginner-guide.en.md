@@ -5,7 +5,8 @@ Every command can be run by copy-pasting it and pressing Enter.
 
 > **About script safety**
 > The scripts in this guide **do not modify system files**.
-> All writes go inside your home folder only — no `sudo` (admin access) required.
+> All writes go inside your home folder only.
+> `sudo` (admin access) is required only on Linux / WSL2 when running `install.sh` (for the libgomp system library).
 > In the worst case, you'll see an error message. Your PC will not be damaged.
 > If you want to undo everything, see [docs/recovery.md](recovery.md).
 
