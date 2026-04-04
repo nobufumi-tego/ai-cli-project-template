@@ -206,6 +206,16 @@ src/data/loader.py に DataLoader クラスを実装してください。
 
 ---
 
+## サポート・トラブル対応
+
+| 状況 | 案内先 |
+|---|---|
+| セットアップで止まった・エラーが出た | [GitHub Discussions](https://github.com/nobufumi-tego/ai-cli-project-template/discussions) または [Issues](https://github.com/nobufumi-tego/ai-cli-project-template/issues/new/choose) |
+| インストールを取り消したい | [docs/recovery.md](docs/recovery.md) |
+| 詳細なサポート情報 | [SUPPORT.md](SUPPORT.md) |
+
+---
+
 ## セキュリティ
 
 `.env` / `*.key` / `*.pem` / `credentials.json` / `data/raw/` / `settings.local.json` /

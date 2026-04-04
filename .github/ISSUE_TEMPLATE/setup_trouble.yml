@@ -1,0 +1,69 @@
+name: 🆘 セットアップのトラブル / Setup Trouble
+description: セットアップ中に止まった・エラーが出た場合 / Stuck or got an error during setup
+labels: ["setup", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        まず `scripts/check-setup.py` の出力をコピーしてください。問題の特定が大幅に速くなります。
+        / First, please copy the output of `scripts/check-setup.py`. It helps us diagnose quickly.
+        ```
+        python  scripts/check-setup.py   # Windows
+        python3 scripts/check-setup.py   # macOS / Linux
+        ```
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon / M1〜M4)
+        - macOS (Intel)
+        - Linux (Ubuntu / Debian)
+        - Linux (その他 / other)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: step
+    attributes:
+      label: どのステップで止まりましたか？ / Which step are you stuck on?
+      options:
+        - Step 1：Git のインストール / Installing Git
+        - Step 2：GitHub からクローン / Cloning from GitHub
+        - Step 3：uv のインストール / Installing uv
+        - Step 4：init-project.py の実行 / Running init-project.py
+        - Step 5：VS Code のインストール / Installing VS Code
+        - Step 6：AI CLI のインストール / Installing AI CLIs
+        - check-setup.py の実行 / Running check-setup.py
+        - その他 / Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: check_setup_output
+    attributes:
+      label: check-setup.py の出力 / Output of check-setup.py
+      description: 実行できる場合はここに貼り付けてください / Paste here if you can run it
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: error_message
+    attributes:
+      label: エラーメッセージ / Error message
+      description: 画面に表示されたメッセージをそのままコピーしてください / Copy the exact message shown on screen
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 試したこと / What you already tried
+      description: ターミナルを再起動した、など / e.g. restarted terminal
+    validations:
+      required: false

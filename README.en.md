@@ -218,6 +218,16 @@ uv run pytest returns the following error: [paste error]. Find and fix the cause
 
 ---
 
+## Support & Troubleshooting
+
+| Situation | Where to go |
+|---|---|
+| Stuck or got an error during setup | [GitHub Discussions](https://github.com/nobufumi-tego/ai-cli-project-template/discussions) or [Issues](https://github.com/nobufumi-tego/ai-cli-project-template/issues/new/choose) |
+| Want to undo the installation | [docs/recovery.md](docs/recovery.md) |
+| Full support information | [SUPPORT.md](SUPPORT.md) |
+
+---
+
 ## Security
 
 `.env` / `*.key` / `*.pem` / `credentials.json` / `data/raw/` / `settings.local.json` /

@@ -1,0 +1,64 @@
+name: 🐛 不具合報告 / Bug Report
+description: スクリプトの動作がおかしい場合 / Something in the scripts doesn't work as expected
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon / M1〜M4)
+        - macOS (Intel)
+        - Linux (Ubuntu / Debian)
+        - Linux (その他 / other)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: script
+    attributes:
+      label: 問題が起きたスクリプト / Script with the issue
+      options:
+        - scripts/init-project.py
+        - scripts/check-setup.py
+        - uv_setup/install.sh
+        - uv_setup/install.bat
+        - その他 / Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待した動作 / Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の動作 / Actual behavior
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 再現手順 / Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: check_setup_output
+    attributes:
+      label: check-setup.py の出力 / Output of check-setup.py
+      render: shell
+    validations:
+      required: false
