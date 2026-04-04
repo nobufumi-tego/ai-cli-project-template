@@ -2,8 +2,17 @@
 
 🇯🇵 [日本語版 README はこちら](README.md)
 
-A universal Python / LaTeX / Word project template compatible with **Claude Code**, **Gemini CLI**, and **Codex CLI**.
-Run `scripts/init-project.py` interactively to auto-generate purpose-specific `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and more.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/powered%20by-uv-DE5FE9.svg)](https://github.com/astral-sh/uv)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet.svg)](https://docs.anthropic.com/en/docs/claude-code/overview)
+[![Gemini CLI](https://img.shields.io/badge/Gemini%20CLI-compatible-4285F4.svg)](https://github.com/google-gemini/gemini-cli)
+[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-compatible-74aa9c.svg)](https://github.com/openai/codex)
+[![EN / JA](https://img.shields.io/badge/lang-EN%20%2F%20JA-orange.svg)](#)
+
+A universal **Python / LaTeX / Word** project template compatible with **Claude Code**, **Gemini CLI**, and **Codex CLI**.
+Run `scripts/init-project.py` interactively to auto-generate `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and more —
+tailored to your project type. Includes a verified uv installer and a zero-dependency environment diagnostic. EN/JA bilingual.
 
 **Supported OS**: Windows 11 / macOS / Linux
 
@@ -89,6 +98,20 @@ and shows OS-specific install instructions for anything missing.
     uv run python scripts/init-project.py
 ======================================================
 ```
+
+---
+
+## Who should use this?
+
+| Situation | How this template helps |
+|---|---|
+| Want to start using Claude Code / Gemini CLI / Codex CLI but don't know how to configure them | Generates shared AGENTS.md config for all 3 tools at once |
+| Tired of writing AGENTS.md and CLAUDE.md from scratch every project | Just pick a preset — files are auto-generated |
+| Setting up a Python ML / AI research project structure | uv + ruff + mypy + pytest, ready to go |
+| Want to use AI CLIs for LaTeX paper writing | LaTeX preset generates a paper-oriented AGENTS.md |
+| Need everyone on the team to reproduce the same environment | uv_setup/ gives anyone the same env, from zero |
+| Starting from a machine with no Python installed | uv installs Python itself — no prior setup needed |
+| Command-line beginner struggling with environment setup | check-setup.py diagnoses what's missing in one run |
 
 ---
 

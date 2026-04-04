@@ -2,8 +2,17 @@
 
 🇬🇧 [English README](README.en.md)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/powered%20by-uv-DE5FE9.svg)](https://github.com/astral-sh/uv)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet.svg)](https://docs.anthropic.com/en/docs/claude-code/overview)
+[![Gemini CLI](https://img.shields.io/badge/Gemini%20CLI-compatible-4285F4.svg)](https://github.com/google-gemini/gemini-cli)
+[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-compatible-74aa9c.svg)](https://github.com/openai/codex)
+[![EN / JA](https://img.shields.io/badge/lang-EN%20%2F%20JA-orange.svg)](#)
+
 Claude Code / Gemini CLI / Codex CLI に対応した Python・LaTeX・Word プロジェクトの汎用雛形。
-`scripts/init-project.py` を対話形式で実行するだけで、用途別の AGENTS.md・CLAUDE.md・GEMINI.md 等を自動生成します。
+`scripts/init-project.py` を対話形式で実行するだけで、用途別の **AGENTS.md・CLAUDE.md・GEMINI.md** 等を自動生成します。
+uv 同梱インストーラー・環境診断スクリプト付き。英語・日本語対応。
 
 **対応 OS**: Windows 11 / macOS / Linux
 
@@ -86,6 +95,20 @@ uv run python scripts/init-project.py
   次のステップ: uv run python scripts/init-project.py
 ======================================================
 ```
+
+---
+
+## こんな方に
+
+| こんな状況 | このテンプレートで解決 |
+|---|---|
+| Claude Code・Gemini CLI・Codex CLI を使い始めたいが設定方法がわからない | 3ツール共通の AGENTS.md 設定ファイルを一括生成 |
+| Python ML / AI 研究のプロジェクト構成に毎回悩んでいる | uv + ruff + mypy + pytest の構成をすぐ使える |
+| LaTeX 論文執筆に AI CLI を活用したい | LaTeX プリセットで論文向け AGENTS.md を自動生成 |
+| チームや研究室で開発環境を統一したい | uv_setup/ で誰でも同じ環境を再現できる |
+| Python を入れていない状態から始めたい | uv が Python ごとインストールしてくれる |
+| コマンドライン初心者で環境構築でつまずいている | check-setup.py で何が足りないか一発診断 |
+| AGENTS.md・CLAUDE.md を毎回ゼロから書いている | プリセットを選ぶだけで自動生成 |
 
 ---
 
