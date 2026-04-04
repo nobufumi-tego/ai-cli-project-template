@@ -2,13 +2,48 @@
 
 ## まず試すこと / Try this first
 
+### Step 1：環境診断を実行してコピーする / Run the diagnostic and copy the output
+
 ```bash
 python  scripts/check-setup.py   # Windows
-python3 scripts/check-setup.py   # macOS / Linux
+python3 scripts/check-setup.py --lang en   # macOS / Linux (English)
 ```
 
-出力内容をそのままコピーしておくと、質問・報告が格段に速くなります。
-/ Copy the full output — it speeds up diagnosis dramatically.
+出力内容をそのままコピーしておくと、次のステップが格段に速くなります。
+/ Copy the full output — it speeds up everything that follows.
+
+---
+
+### Step 2：生成 AI に聞く / Ask an AI chatbot
+
+Claude・Gemini・ChatGPT はセットアップエラーの解決が得意です。
+以下のプロンプトに情報を埋めて貼り付けてください。
+
+| AI | URL |
+|---|---|
+| Claude | https://claude.ai |
+| Gemini | https://gemini.google.com |
+| ChatGPT | https://chatgpt.com |
+
+**プロンプトテンプレート / Prompt template:**
+
+```
+開発環境のセットアップ中にエラーが発生しました。解決方法を教えてください。
+I'm getting an error during development environment setup. Please help me fix it.
+
+[OS] Windows 11 / macOS / Linux
+
+[実行したコマンド / Command I ran]
+（ここに貼り付け / paste here）
+
+[エラーメッセージ / Error message]
+（ここに貼り付け / paste here）
+
+[check-setup.py の出力 / check-setup.py output]
+（ここに貼り付け / paste here）
+```
+
+---
 
 ---
 

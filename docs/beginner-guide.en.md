@@ -475,8 +475,42 @@ Type your password and press Enter.
 
 ### If nothing else works
 
-Copy the output of `scripts/check-setup.py --lang en` and try one of these:
+**Ask an AI first (recommended)**
 
-- Search the error message directly in a search engine
+Claude, Gemini, and ChatGPT are excellent at diagnosing setup errors.
+Copy the prompt template below, fill in your error details, and paste it into any of these:
+
+| AI | Free service |
+|---|---|
+| Claude | https://claude.ai |
+| Gemini | https://gemini.google.com |
+| ChatGPT | https://chatgpt.com |
+
+**Copy-paste prompt template:**
+
+```
+I'm getting an error while setting up a development environment. Please help me fix it.
+
+[OS]
+(e.g., Windows 11 / macOS Sequoia / Ubuntu 22.04)
+
+[Command I ran]
+(e.g., uv run python scripts/init-project.py)
+
+[Error message]
+(paste the exact error here)
+
+[Environment diagnostic output]
+(run the command below and paste the full output here)
+python  scripts/check-setup.py --lang en   # Windows
+python3 scripts/check-setup.py --lang en   # macOS / Linux
+```
+
+> **Tip:** Including both the error message and the `check-setup.py` output helps the AI identify the root cause quickly. The more you paste, the better the answer.
+
+---
+
+If that still doesn't resolve it:
+
 - Show your screen to someone experienced (in person or via screen share)
-- Post in GitHub Issues
+- Post in [GitHub Discussions](https://github.com/nobufumi-tego/ai-cli-project-template/discussions) (always include the `check-setup.py` output)
