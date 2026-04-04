@@ -192,4 +192,7 @@ src/data/loader.py に DataLoader クラスを実装してください。
 
 ## ライセンス
 
-MIT
+[MIT License](LICENSE) © 2026 nobufumi yoshida
+
+このリポジトリのスクリプト・設定ファイルは MIT ライセンスです。
+`scripts/init-project.py` が生成したファイル（AGENTS.md・README.md 等）はすべてユーザーに帰属し、このライセンスの対象外です。
