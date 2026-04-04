@@ -37,6 +37,11 @@ build/
 secrets.json
 credentials.json
 
+# uv_setup 実行後の生成ファイル（インストール済み環境）
+uv_setup/.venv/
+uv_setup/uv.lock
+uv_setup/.ipynb_checkpoints/
+
 # OS
 .DS_Store
 Thumbs.db
