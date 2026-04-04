@@ -29,9 +29,33 @@ git --version
 
 ## クイックスタート
 
-### Step 1：リポジトリをクローン
+### Step 1：Git をインストール（Windows 11 のみ）
 
-git だけあれば OK です。
+Windows 11 には Git が標準搭載されていません。**Git for Windows** を先にインストールしてください。
+
+**方法 A：winget（推奨）**
+
+PowerShell または コマンドプロンプトで実行：
+```powershell
+winget install --id Git.Git -e --source winget
+```
+
+**方法 B：公式インストーラー**
+
+1. https://git-scm.com/download/win を開く
+2. 「Click here to download」からインストーラーをダウンロードして実行
+3. インストール時のオプションはすべてデフォルトで OK
+
+インストール後、**PowerShell を再起動**して確認：
+```powershell
+git --version
+```
+
+> macOS / Linux はほぼ標準搭載です。未インストールの場合は `xcode-select --install`（macOS）または `sudo apt install git`（Ubuntu）で導入できます。
+
+---
+
+### Step 2：リポジトリをクローン
 
 ```bash
 git clone https://github.com/<your-name>/<your-repo>.git
@@ -40,7 +64,7 @@ cd <your-repo>
 
 ---
 
-### Step 2：uv をインストール
+### Step 3：uv をインストール
 
 clone 直後は `uv` コマンドが使えないため、**先にインストールが必要**です。
 `uv_setup/` に OS 別の検証済みスクリプトがあります（curl / PowerShell のみ必要）。
@@ -67,7 +91,7 @@ uv --version   # バージョンが表示されれば OK
 
 ---
 
-### Step 3：プロジェクトを初期化
+### Step 4：プロジェクトを初期化
 
 ```bash
 uv run python scripts/init-project.py
