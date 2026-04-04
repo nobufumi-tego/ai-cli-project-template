@@ -29,29 +29,53 @@ git --version
 
 ## クイックスタート
 
-### Step 1：Git をインストール（Windows 11 のみ）
+### Step 1：Git をインストール
 
-Windows 11 には Git が標準搭載されていません。**Git for Windows** を先にインストールしてください。
+Git はどの OS にも標準搭載されていません。まず確認してください：
 
-**方法 A：winget（推奨）**
+```bash
+git --version   # バージョンが表示されれば OK → Step 2 へ
+```
 
-PowerShell または コマンドプロンプトで実行：
+インストールされていない場合は、OS に応じて以下を実行してください。
+
+**Windows 11**
+
+方法 A：winget（PowerShell または コマンドプロンプトで実行）
 ```powershell
 winget install --id Git.Git -e --source winget
 ```
 
-**方法 B：公式インストーラー**
-
+方法 B：公式インストーラー
 1. https://git-scm.com/download/win を開く
-2. 「Click here to download」からインストーラーをダウンロードして実行
-3. インストール時のオプションはすべてデフォルトで OK
+2. インストーラーをダウンロードして実行（オプションはすべてデフォルトで OK）
 
-インストール後、**PowerShell を再起動**して確認：
-```powershell
-git --version
+インストール後は **PowerShell を再起動**して `git --version` で確認。
+
+---
+
+**macOS**
+
+```bash
+xcode-select --install   # Xcode Command Line Tools（git を含む）
 ```
 
-> macOS / Linux はほぼ標準搭載です。未インストールの場合は `xcode-select --install`（macOS）または `sudo apt install git`（Ubuntu）で導入できます。
+または Homebrew 経由：
+```bash
+brew install git
+```
+
+---
+
+**Linux (Ubuntu / Debian)**
+```bash
+sudo apt update && sudo apt install git
+```
+
+**Linux (Fedora / RHEL)**
+```bash
+sudo dnf install git
+```
 
 ---
 
