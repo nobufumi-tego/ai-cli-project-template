@@ -166,17 +166,74 @@ code --version
 
 #### 推奨拡張機能
 
-VS Code 起動後、以下の拡張機能をインストールすると快適に使えます：
+VS Code 起動後、以下の拡張機能をインストールすると快適に使えます。
+`code --install-extension <ID>` でコマンドラインからインストールできます。
 
-| 拡張機能 | 用途 | インストールコマンド |
+**AI・コーディング支援**
+
+| 拡張機能 | ID | 用途 |
 |---|---|---|
-| Claude Code | AI コーディング支援（Claude） | `code --install-extension anthropic.claude-code` |
-| Python | Python 開発全般 | `code --install-extension ms-python.python` |
-| Pylance | Python 型チェック・補完 | `code --install-extension ms-python.vscode-pylance` |
-| LaTeX Workshop | LaTeX 編集・プレビュー | `code --install-extension James-Yu.latex-workshop` |
-| GitLens | Git 履歴・差分の可視化 | `code --install-extension eamodio.gitlens` |
+| Claude Code | `anthropic.claude-code` | Claude によるコード補完・AI 操作 |
+| GitHub Copilot | `github.copilot` | GitHub AI コード補完（有料） |
+| Continue | `continue.continue` | オープンソース AI コーディング支援 |
 
-> LaTeX Workshop は LaTeX 論文執筆プリセットを選んだ場合に特に有用です。
+**Python 開発**
+
+| 拡張機能 | ID | 用途 |
+|---|---|---|
+| Python | `ms-python.python` | Python 実行・デバッグ・テスト |
+| Pylance | `ms-python.vscode-pylance` | 型チェック・高速補完 |
+| Ruff | `charliermarsh.ruff` | 高速リンター（このテンプレートで使用） |
+| Mypy Type Checker | `ms-python.mypy-type-checker` | 厳密な型チェック |
+| Python Debugger | `ms-python.debugpy` | ブレークポイントデバッグ |
+
+**データ・Notebook**
+
+| 拡張機能 | ID | 用途 |
+|---|---|---|
+| Jupyter | `ms-toolsai.jupyter` | Notebook の編集・実行 |
+| Rainbow CSV | `mechatroner.rainbow-csv` | CSV ファイルを色分け表示 |
+
+**Git 管理**
+
+| 拡張機能 | ID | 用途 |
+|---|---|---|
+| GitLens | `eamodio.gitlens` | Git 履歴・差分・blame の可視化 |
+| Git Graph | `mhutchie.git-graph` | ブランチのグラフ表示 |
+
+**ファイル・編集補助**
+
+| 拡張機能 | ID | 用途 |
+|---|---|---|
+| YAML | `redhat.vscode-yaml` | YAML 補完・検証（configs/ 向け） |
+| Markdown All in One | `yzhang.markdown-all-in-one` | AGENTS.md 等の Markdown 編集 |
+| indent-rainbow | `oderwat.indent-rainbow` | インデントを色分け表示 |
+| Better Comments | `aaron-bond.better-comments` | コメントを色分けして可読性向上 |
+
+**LaTeX 論文執筆**（プリセット 6 を選んだ場合）
+
+| 拡張機能 | ID | 用途 |
+|---|---|---|
+| LaTeX Workshop | `James-Yu.latex-workshop` | LaTeX 編集・PDF プレビュー・自動ビルド |
+| LTeX | `valentjn.vscode-ltex` | 英語・日本語の文法・スペルチェック |
+
+**リモート開発**（サーバー上で開発する場合）
+
+| 拡張機能 | ID | 用途 |
+|---|---|---|
+| Remote - SSH | `ms-vscode-remote.remote-ssh` | SSH 接続先で VS Code を使う |
+| WSL | `ms-vscode-remote.remote-wsl` | Windows の WSL 上で VS Code を使う |
+
+一括インストール例（Python 開発向け）：
+```bash
+code --install-extension anthropic.claude-code \
+     ms-python.python \
+     ms-python.vscode-pylance \
+     charliermarsh.ruff \
+     ms-toolsai.jupyter \
+     eamodio.gitlens \
+     yzhang.markdown-all-in-one
+```
 
 ---
 
