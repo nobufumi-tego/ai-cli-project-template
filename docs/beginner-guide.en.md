@@ -3,6 +3,12 @@
 A step-by-step guide for people who have never used the command line before.
 Every command can be run by copy-pasting it and pressing Enter.
 
+> **About script safety**
+> The scripts in this guide **do not modify system files**.
+> All writes go inside your home folder only — no `sudo` (admin access) required.
+> In the worst case, you'll see an error message. Your PC will not be damaged.
+> If you want to undo everything, see [docs/recovery.md](recovery.md).
+
 > **About this guide**
 > There are many steps and you may get stuck along the way.
 > For your first time, **we strongly recommend having someone experienced nearby, or screen-sharing with them**.

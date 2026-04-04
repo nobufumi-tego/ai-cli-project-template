@@ -228,7 +228,28 @@ uv run pytest returns the following error: [paste error]. Find and fix the cause
 
 ---
 
-## Security
+## Script Safety
+
+The scripts in this repository **do not modify system files**.
+All writes go to user-space directories only (under your home directory). No `sudo` required.
+
+| Script | Write location | sudo required | Worst case |
+|---|---|---|---|
+| `uv_setup/install.sh` | `~/.local/bin/uv`, `uv_setup/.venv/` (ML env) | Linux only (libgomp install) | Error exit only |
+| `uv_setup/install.bat` / `install.ps1` | `~\.local\bin\uv`, `uv_setup\.venv\` | No | Error exit only |
+| `scripts/init-project.py` | Inside the project folder you ran it in | No | Error exit only |
+| `scripts/check-setup.py` | No writes (read-only diagnostic) | No | Error exit only |
+
+> **Note**: `uv_setup/install.sh` installs uv plus a full ML stack (PyTorch, JupyterLab, etc., ~2 GB)
+> into `uv_setup/.venv/`. This can take 10–30 minutes.
+> If you only want uv itself, run: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+To undo the installation, see [docs/recovery.md](docs/recovery.md).
+(uv can be fully removed with a single `uv self uninstall` command.)
+
+---
+
+## Security (git)
 
 `.env` / `*.key` / `*.pem` / `credentials.json` / `data/raw/` / `settings.local.json` /
 large files (`*.pt` `*.pkl` `*.mp4`) are all excluded via `.gitignore`.
