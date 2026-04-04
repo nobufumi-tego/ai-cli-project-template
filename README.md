@@ -128,7 +128,60 @@ uv run python scripts/init-project.py
 
 ---
 
-### Step 5：AI CLI をインストール（任意）
+### Step 5：VS Code をインストール（推奨）
+
+> **このステップは省略できます。**
+> お好みのエディタを使って構いません。
+> ただし VS Code は Claude Code・Gemini CLI との統合機能があり、このテンプレートとの相性が良いため推奨します。
+
+**Windows 11**
+```powershell
+winget install Microsoft.VisualStudioCode
+```
+インストール後は **PowerShell を再起動**してください。
+
+**macOS**
+```bash
+brew install --cask visual-studio-code
+```
+
+**Linux (Ubuntu / Debian)**
+```bash
+sudo snap install code --classic
+```
+
+**Linux（snap が使えない場合）**
+```bash
+# Microsoft の apt リポジトリ経由
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | sudo tee /etc/apt/sources.list.d/vscode.list
+sudo apt update && sudo apt install code
+```
+
+インストール確認：
+```bash
+code --version
+```
+
+#### 推奨拡張機能
+
+VS Code 起動後、以下の拡張機能をインストールすると快適に使えます：
+
+| 拡張機能 | 用途 | インストールコマンド |
+|---|---|---|
+| Claude Code | AI コーディング支援（Claude） | `code --install-extension anthropic.claude-code` |
+| Python | Python 開発全般 | `code --install-extension ms-python.python` |
+| Pylance | Python 型チェック・補完 | `code --install-extension ms-python.vscode-pylance` |
+| LaTeX Workshop | LaTeX 編集・プレビュー | `code --install-extension James-Yu.latex-workshop` |
+| GitLens | Git 履歴・差分の可視化 | `code --install-extension eamodio.gitlens` |
+
+> LaTeX Workshop は LaTeX 論文執筆プリセットを選んだ場合に特に有用です。
+
+---
+
+### Step 6：AI CLI をインストール（任意）
+
 
 > **このステップは省略できます。**
 > AI CLI がなくてもプロジェクトは通常通り使えます。
