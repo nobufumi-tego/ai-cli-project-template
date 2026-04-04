@@ -29,97 +29,183 @@ git --version
 
 ## クイックスタート
 
-### Step 1：Git をインストール
+> **ターミナル（コマンドライン）とは？**
+> キーボードで文字を入力してコンピュータを操作する画面です。
+> マウスでアイコンをクリックするかわりに、コマンドを入力して作業します。
+> このガイドの手順は、ターミナルにコマンドをコピー＆ペーストして Enter を押すだけで進められます。
 
-Git はどの OS にも標準搭載されていません。まず確認してください：
+---
 
-```bash
-git --version   # バージョンが表示されれば OK → Step 2 へ
-```
-
-インストールされていない場合は、OS に応じて以下を実行してください。
+### ターミナルの開き方
 
 **Windows 11**
+1. スタートボタンを右クリック
+2. 「Windows PowerShell」または「ターミナル」をクリック
 
-方法 A：winget（PowerShell または コマンドプロンプトで実行）
+> ⚠️ 「管理者として実行」は不要です。通常ユーザーで開いてください。
+
+**macOS**
+1. Spotlight（`Command + Space`）を開く
+2. 「ターミナル」と入力して Enter
+
+**Linux**
+- `Ctrl + Alt + T` を押す（Ubuntu 等）
+
+---
+
+### Step 1：Git をインストール
+
+Git は「ファイルの変更履歴を管理するツール」です。プロジェクトのダウンロードにも使います。
+
+まずターミナルで以下を入力して確認してください：
+
+```bash
+git --version
+```
+
+「git version 2.xx.x」のように表示されれば OK です → **Step 2 へ進んでください**。
+
+何も表示されない・エラーが出る場合はインストールが必要です。
+
+---
+
+**Windows 11 の場合**
+
+方法 A：コマンドでインストール（PowerShell に貼り付けて Enter）
 ```powershell
 winget install --id Git.Git -e --source winget
 ```
 
-方法 B：公式インストーラー
+> ⚠️ `winget` が見つからないと言われた場合は方法 B を使ってください。
+
+方法 B：インストーラーを使う
 1. https://git-scm.com/download/win を開く
-2. インストーラーをダウンロードして実行（オプションはすべてデフォルトで OK）
+2. 一番上のダウンロードリンクをクリック
+3. ダウンロードされた `.exe` ファイルをダブルクリック
+4. 「Next」を押し続けてデフォルト設定のままインストール
 
-インストール後は **PowerShell を再起動**して `git --version` で確認。
-
----
-
-**macOS**
-
-```bash
-xcode-select --install   # Xcode Command Line Tools（git を含む）
-```
-
-または Homebrew 経由：
-```bash
-brew install git
+インストール後：**PowerShell を閉じて開き直し**、以下で確認
+```powershell
+git --version
 ```
 
 ---
 
-**Linux (Ubuntu / Debian)**
+**macOS の場合**
+
+ターミナルで以下を実行：
+```bash
+xcode-select --install
+```
+
+ダイアログが出たら「インストール」をクリックして待つ（数分かかります）。
+
+---
+
+**Linux (Ubuntu / Debian) の場合**
 ```bash
 sudo apt update && sudo apt install git
 ```
 
-**Linux (Fedora / RHEL)**
-```bash
-sudo dnf install git
-```
+パスワードを聞かれたらログイン時のパスワードを入力してください（画面に表示されませんが入力されています）。
 
 ---
 
-### Step 2：リポジトリをクローン
+### Step 2：GitHub からリポジトリを取得する
+
+> **GitHub とは？** プログラムのファイルをインターネット上で管理・共有するサービスです。
+> このテンプレートも GitHub で公開されています。
+
+**① GitHub アカウントを作る（持っていない場合）**
+
+1. https://github.com を開く
+2. 「Sign up」からアカウントを作成
+
+**② このテンプレートをコピーする**
+
+1. このリポジトリのページで「**Use this template**」ボタンをクリック
+2. 「Create a new repository」を選択
+3. リポジトリ名を入力して「Create repository」
+
+**③ 自分のリポジトリをパソコンにダウンロードする**
+
+作成されたリポジトリのページで「**Code**」→「**HTTPS**」の URL をコピーして、
+ターミナルで以下を実行（URL は自分のものに変えてください）：
 
 ```bash
-git clone https://github.com/<your-name>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/<あなたのアカウント名>/<リポジトリ名>.git
 ```
+
+ダウンロードが完了したら、そのフォルダに移動します：
+
+```bash
+cd <リポジトリ名>
+```
+
+> **`cd` とは？** 「Change Directory」の略で、フォルダを移動するコマンドです。
+> `cd my-project` と入力すると `my-project` フォルダの中に入ります。
 
 ---
 
 ### Step 3：uv をインストール
 
-clone 直後は `uv` コマンドが使えないため、**先にインストールが必要**です。
-`uv_setup/` に OS 別の検証済みスクリプトがあります（curl / PowerShell のみ必要）。
+uv は Python とパッケージを自動管理するツールです。
+`uv_setup/` フォルダに OS 別の検証済みインストーラーが入っています。
 
-**Linux**
+**Windows 11 の場合**
+
+エクスプローラーでクローンしたフォルダを開き、`uv_setup` フォルダの中の
+`install.bat` を**ダブルクリック**してください。
+
+> ⚠️ 「Windows によって PC が保護されました」というダイアログが出た場合：
+> 「詳細情報」→「実行」をクリックしてください。
+
+または PowerShell から：
+```powershell
+.\uv_setup\install.bat
+```
+
+**macOS / Linux の場合**
+
 ```bash
 chmod +x uv_setup/install.sh
 ./uv_setup/install.sh
 ```
 
-**Windows 11**（ダブルクリックまたは PowerShell から）
-```bat
-uv_setup\install.bat
+インストールが終わったら、**ターミナルを閉じて開き直し**、以下で確認：
+
+```bash
+uv --version
 ```
+
+バージョン番号が表示されれば OK です。
 
 > 詳細は **[uv_setup/README.md](uv_setup/README.md)** を参照してください。
-> ※ `uv_setup/install.*` は uv + Python + ML 基本パッケージを一括セットアップします。
-> uv だけ入れたい場合は `uv --version` で確認後、不要なパッケージは後から追加してください。
-
-インストール後、**ターミナルを再起動**して確認：
-```bash
-uv --version   # バージョンが表示されれば OK
-```
 
 ---
 
 ### Step 4：プロジェクトを初期化
 
+ターミナルでクローンしたフォルダにいることを確認して（`cd <リポジトリ名>` で移動）、
+以下を実行：
+
 ```bash
 uv run python scripts/init-project.py
 ```
+
+質問が表示されるので、番号や文字を入力して Enter を押してください。
+
+```
+プロジェクト種別を選択してください：
+  1. Python ML / AI 研究
+  2. データ分析
+  ...
+番号を入力 [1]: 1          ← 入力して Enter
+
+プロジェクト名（英語推奨） [my-project]: my-analysis    ← 入力して Enter
+```
+
+最後に「完了しました！」と表示されれば成功です。
 
 対話形式で以下を設定します：
 - プロジェクト種別の選択（8種類）
