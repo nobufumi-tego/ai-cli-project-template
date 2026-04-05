@@ -53,13 +53,13 @@ AGENTS.md を更新するだけで 3ツールすべてに反映される
 ## クイックスタート
 
 ```bash
-# 1. uv をインストール（Git は別途インストール、uv_setup/ には ML 環境も含む）
+# 1. クローン
+git clone https://github.com/nobufumi-tego/ai-cli-project-template.git
+cd ai-cli-project-template
+
+# 2. uv をインストール（uv_setup/ には ML 環境も含む）
 ./uv_setup/install.sh        # macOS / Linux（uv + PyTorch 等 約 2GB）
 .\uv_setup\install.bat       # Windows 11（uv + PyTorch 等 約 2GB）
-
-# 2. クローン
-git clone https://github.com/<your-name>/<your-repo>.git
-cd <your-repo>
 
 # 3. 環境確認（何が足りないか自動診断）
 python  scripts/check-setup.py   # Windows

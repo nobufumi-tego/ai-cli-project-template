@@ -52,13 +52,13 @@ Update AGENTS.md once → changes apply to all 3 tools instantly
 ## Quick Start
 
 ```bash
-# 1. Install uv (Git is separate; uv_setup/ also installs a full ML stack)
+# 1. Clone
+git clone https://github.com/nobufumi-tego/ai-cli-project-template.git
+cd ai-cli-project-template
+
+# 2. Install uv (uv_setup/ also installs a full ML stack)
 ./uv_setup/install.sh        # macOS / Linux (uv + PyTorch etc., ~2 GB)
 .\uv_setup\install.bat       # Windows 11 (uv + PyTorch etc., ~2 GB)
-
-# 2. Clone
-git clone https://github.com/<your-name>/<your-repo>.git
-cd <your-repo>
 
 # 3. Diagnose environment (auto-detects what's missing)
 python  scripts/check-setup.py --lang en   # Windows
