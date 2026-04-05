@@ -1,7 +1,7 @@
 [project]
-name = "my-project"
+name = "ai-cli-project-template"
 version = "0.1.0"
-description = "Project description"
+description = "Claude Code / Gemini CLI / Codex CLI 対応 Python プロジェクトの汎用雛形"
 requires-python = ">=3.10"
 dependencies = []
 

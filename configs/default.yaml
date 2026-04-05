@@ -1,0 +1,32 @@
+# デフォルト実験設定
+# このファイルをコピーして実験ごとの設定ファイルを作成してください。
+# 例: configs/exp001.yaml
+
+# ── 再現性 ─────────────────────────────────────────────────
+random_seed: 42
+
+# ── データ ─────────────────────────────────────────────────
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  train_split: 0.8       # 訓練データ割合
+  val_split: 0.1         # 検証データ割合
+  test_split: 0.1        # テストデータ割合
+
+# ── モデル ─────────────────────────────────────────────────
+model:
+  input_size: 224        # pixels
+  hidden_size: 256       # units
+  output_size: 10        # クラス数
+
+# ── 学習 ───────────────────────────────────────────────────
+training:
+  learning_rate: 1.0e-3  # dimensionless
+  batch_size: 32         # samples
+  max_epochs: 100        # epochs
+  patience: 10           # epochs (early stopping)
+
+# ── 出力 ───────────────────────────────────────────────────
+output:
+  model_dir: data/models
+  log_dir: data/logs

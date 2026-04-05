@@ -3,7 +3,8 @@
 CLAUDE.local.md
 
 # データファイル（大容量・元データ）
-data/raw/
+data/raw/*
+!data/raw/.gitkeep
 *.mp4
 *.avi
 *.mov
