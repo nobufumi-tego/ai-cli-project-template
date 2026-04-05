@@ -73,6 +73,7 @@ uv run python scripts/init-project.py
 `scripts/check-setup.py` checks Git, uv, Python, VS Code, and AI CLIs in one run,
 and shows OS-specific install instructions for anything missing.
 **Runs on Python standard library only — no uv or external packages needed.**
+It is run with `python3` directly (not `uv run`) so it works even before uv is installed.
 
 ```
 ======================================================

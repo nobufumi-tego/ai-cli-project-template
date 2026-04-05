@@ -54,6 +54,8 @@ python  scripts/check-setup.py --lang en   # Windows
 python3 scripts/check-setup.py --lang en   # macOS / Linux
 ```
 
+> This uses `python3` directly (not `uv run`) because it is designed to work even before uv is installed.
+
 It automatically shows what's missing and how to install it.
 **If you get an error, copy the output and search for it, or show it to someone experienced.**
 

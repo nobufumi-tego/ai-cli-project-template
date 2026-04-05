@@ -74,6 +74,7 @@ uv run python scripts/init-project.py
 `scripts/check-setup.py` は Git・uv・Python・VS Code・AI CLI の有無を一括確認し、
 不足しているもののインストール方法を表示します。
 **Python のみで動作します（uv・外部パッケージ不要）。**
+`uv run` ではなく `python3` で直接実行するのは、uv 未インストール時でも診断できるようにするためです。
 
 ```
 ======================================================

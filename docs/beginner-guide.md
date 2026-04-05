@@ -55,6 +55,8 @@ python  scripts/check-setup.py   # Windows
 python3 scripts/check-setup.py   # macOS / Linux
 ```
 
+> `uv run` ではなく `python3` で直接実行します。uv がまだ入っていない状態でも動くよう設計されているためです。
+
 何が足りないかと、インストール方法が自動で表示されます。
 **エラーが出たときは、このコマンドの出力内容をそのままコピーして検索するか、詳しい人に見せてください。**
 
