@@ -146,16 +146,15 @@ sudo apt update && sudo apt install git
 2. 「Sign up」からアカウントを作成
 
 **② このテンプレートをコピーする**
-1. このリポジトリのページで「**Use this template**」ボタンをクリック
-2. 「Create a new repository」を選択
-3. リポジトリ名を入力して「Create repository」
+1. https://github.com/nobufumi-tego/ai-cli-project-template を開く
+2. 「**Use this template**」ボタンをクリック
+3. 「Create a new repository」を選択
+4. リポジトリ名を入力して「Create repository」
 
 **③ パソコンにダウンロードする**
 
-作成されたリポジトリのページで「**Code**」→「**HTTPS**」の URL をコピーして実行：
-
 ```bash
-git clone https://github.com/<あなたのアカウント名>/<リポジトリ名>.git
+git clone https://github.com/nobufumi-tego/ai-cli-project-template.git
 ```
 
 **期待される出力：**

@@ -145,16 +145,15 @@ When prompted for a password, enter your login password (it won't appear on scre
 2. Click "Sign up" to create an account
 
 **② Copy this template**
-1. On this repository's page, click the "**Use this template**" button
-2. Select "Create a new repository"
-3. Enter a repository name and click "Create repository"
+1. Open https://github.com/nobufumi-tego/ai-cli-project-template
+2. Click the "**Use this template**" button
+3. Select "Create a new repository"
+4. Enter a repository name and click "Create repository"
 
 **③ Download to your computer**
 
-On the page for your new repository, click "**Code**" → "**HTTPS**" and copy the URL, then run:
-
 ```bash
-git clone https://github.com/<your-account>/<repository-name>.git
+git clone https://github.com/nobufumi-tego/ai-cli-project-template.git
 ```
 
 **Expected output:**
