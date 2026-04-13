@@ -34,6 +34,7 @@ uv run mypy src/                    # 型チェック実行
 - `.codex/`         - Codex CLI 設定（config.toml）
 
 ## Conventions
+- セッション開始時に必ず `TASKS.md` を読み、現在の作業状況と次のタスクを確認すること
 - 型ヒント必須（Python 3.10+）
 - すべての関数・クラスにdocstringを書く（Google スタイル）
 - 数値の単位はコメントまたは変数名で明記（例: `duration_sec`, `size_mb`）

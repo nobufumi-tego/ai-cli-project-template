@@ -1,0 +1,35 @@
+site_name: ai-cli-project-template
+theme:
+  name: material
+  language: ja
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            import_identifier_as_base: true
+
+nav:
+  - Home: index.md
+  - Architecture: AGENTS.md
+  - Guides:
+      - Beginner's Guide: docs/beginner-guide.md
+      - Instructor Guide: docs/instructor-guide.md
+  - API Reference:
+      - Main: reference/main.md
+      - Data: reference/data.md
+      - Models: reference/models.md
+      - Evaluation: reference/evaluation.md
+      - Utils: reference/utils.md
+  - Tasks: TASKS.md
